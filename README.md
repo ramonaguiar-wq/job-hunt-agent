@@ -4,6 +4,10 @@ A personal agent that hunts design jobs, ranks them against hard rules, and help
 
 Built for my own search as a remote Product Designer. It runs hourly, reads public job sources, and never applies or messages anyone on its own.
 
+![Job radar panel with sample data](docs/panel-jobs.png)
+
+*The job radar, shown with fictional sample jobs. Each card has a score, a remote-confirmed check, and four actions; nothing is sent without a click. (The panel UI is in Portuguese.)*
+
 ## What it does
 
 ```
