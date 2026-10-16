@@ -1,0 +1,9 @@
+.env
+node_modules/
+__pycache__/
+*.db
+*.bak*
+*.backup*
+**/data/
+!**/test-fixtures/
+.DS_Store

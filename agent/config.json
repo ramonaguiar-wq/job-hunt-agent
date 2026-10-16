@@ -1,0 +1,60 @@
+{
+  "port": 8765,
+  "timezone": "Europe/Madrid",
+  "language": "English",
+  "claude_model": "sonnet",
+  "use_web_search": true,
+  "generate_at": [
+    "mon 09:30",
+    "tue 09:30",
+    "wed 09:30",
+    "thu 09:30",
+    "fri 09:30"
+  ],
+  "publish_slots": [
+    "tue 08:45",
+    "wed 08:45",
+    "thu 08:45"
+  ],
+  "max_pending_drafts": 3,
+  "popup_on_new_draft": true,
+  "portfolio_url": "https://your-portfolio.example",
+  "pillars": {
+    "case": 3,
+    "ai": 3,
+    "adtech": 2,
+    "systems": 2,
+    "craft": 2,
+    "career": 1
+  },
+  "formats": [
+    "story",
+    "contrarian",
+    "framework",
+    "teardown",
+    "mistake",
+    "question"
+  ],
+  "linkedin_api_version": "",
+  "later_hours": 6,
+  "claude_effort": "low",
+  "engage_at": [
+    "mon 10:30",
+    "tue 10:30",
+    "wed 10:30",
+    "thu 10:30",
+    "fri 10:30"
+  ],
+  "engage_jobs_per_day": 5,
+  "engage_voices_per_day": 2,
+  "engage_followup_days": 3,
+  "metrics_after_hours": 48,
+  "connect_per_day": 20,
+  "connect_week_cap": 100,
+  "sheet_url": "",
+  "auto_draft_after_publish": false,
+  "auto_generate_scheduled": false,
+  "auto_engage_daily": false,
+  "auto_connect_daily": false,
+  "auto_find_people": false
+}

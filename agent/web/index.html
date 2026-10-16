@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agente do LinkedIn</title>
+<style>
+:root{
+  --bg:#f4f2ee; --panel:#ffffff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e3e0da;
+  --accent:#0a66c2; --accent-ink:#fff; --ok:#1f8a4c; --warn:#b35c00; --bad:#c0392b;
+  --chip:#eef3f8; --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#141414; --panel:#1e1e20; --ink:#ececee; --muted:#9a9aa1; --line:#2d2d31;
+  --accent:#70b5f9; --accent-ink:#0b1c2c; --chip:#23303d; --shadow:none;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.logo{font-weight:700;letter-spacing:-.01em;display:flex;gap:8px;align-items:center}
+.logo i{width:26px;height:26px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px}
+.pill{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.chip input{margin:0}
+.pill.ok{color:var(--ok)} .pill.bad{color:var(--bad)}
+.spacer{flex:1}
+button,.btn{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;text-decoration:none;white-space:nowrap}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+main{max-width:1180px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto}
+.tab{background:transparent;border:none;color:var(--muted);padding:8px 12px;border-radius:8px}
+.tab.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
+.tab b{font-weight:600;margin-left:4px;color:var(--accent)}
+.gen{display:flex;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:18px;box-shadow:var(--shadow)}
+.gen input{flex:1;min-width:220px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.card.flash{outline:2px solid var(--accent)}
+.card-h{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-h .t{font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.edit{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.edit textarea{width:100%;min-height:340px;resize:vertical;line-height:1.5}
+.edit textarea.fc{min-height:64px}
+.meta{font-size:12.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.meta .warn{color:var(--warn)}
+.why{white-space:pre-wrap;font-size:13px;color:var(--muted);background:var(--chip);padding:8px 10px;border-radius:10px}
+.prev{padding:16px;background:color-mix(in srgb,var(--bg) 50%,var(--panel))}
+.li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;max-width:560px}
+.li-h{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0a66c2,#5b2bd6);color:#fff;display:grid;place-items:center;font-weight:700}
+.li-h small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+.li-body{white-space:pre-wrap;font-size:14px;word-wrap:break-word}
+.li-body .more{color:var(--muted)}
+.li-body .fold{border-top:1px dashed var(--warn);margin:6px 0;font-size:11px;color:var(--warn);padding-top:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line)}
+.empty{color:var(--muted);text-align:center;padding:60px 20px}
+.err{color:var(--bad);font-size:13px}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);max-width:640px;width:92vw;padding:22px}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h3{margin:0 0 6px} dialog h4{margin:18px 0 6px}
+dialog p,dialog li{color:var(--muted);font-size:14px}
+dialog code{background:var(--chip);padding:1px 6px;border-radius:6px;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.row input{flex:1;min-width:180px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(1turn)}}
+.up{display:grid;grid-template-columns:1.1fr 1.4fr;gap:14px;margin-bottom:18px}
+@media (max-width:860px){.up{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.box h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.step{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:none}
+.step .k{font-size:12px;color:var(--muted);min-width:92px}
+.idea{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.idea:first-of-type{border-top:none}
+.idea div{flex:1} .idea small{display:block;color:var(--muted);font-size:12.5px}
+.kind{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--accent);white-space:nowrap}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.take{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:18px;box-shadow:var(--shadow)}
+.take summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+.take summary::-webkit-details-marker{display:none}
+.take summary::before{content:"↻";color:var(--accent);font-weight:700}
+.take[open] summary{margin-bottom:10px}
+.take p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.take textarea{width:100%;min-height:80px}
+.reshare{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+.reshare b{color:var(--ink)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1}
+.eng{margin-bottom:18px}
+.eng .hint{color:var(--muted);font-size:13px;margin:2px 0 12px}
+.tgt{border-top:1px solid rgba(128,128,128,.18);padding:12px 0}
+.tgt:first-child{border-top:none}
+.tgt .who{font-weight:600}
+.tgt .sub{color:var(--muted);font-size:13px;margin:3px 0 8px}
+.tgt .links a{font-size:13px;margin-right:12px}
+.tgt textarea{width:100%;min-height:70px;margin-top:8px}
+.tgt .opt{background:rgba(128,128,128,.10);border-radius:8px;padding:10px;margin-top:8px;font-size:14px;white-space:pre-wrap}
+.tgt .opt .row{margin-top:8px}
+.kind{font-size:11px;padding:2px 6px;border-radius:4px;background:rgba(128,128,128,.18);margin-left:6px}
+.tgt.done{opacity:.5}
+.fup{background:rgba(255,190,80,.14);border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px}
+.mrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.mrow input{width:100px;padding:5px 8px}
+.views{display:flex;gap:4px;margin:0 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.views button{border:none;border-radius:0;background:transparent;color:var(--muted);padding:10px 14px;border-bottom:2px solid transparent;font-weight:500}
+.views button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.views b{display:inline-block;min-width:18px;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:11.5px;line-height:18px}
+.view{display:none}.view.on{display:block}
+.view>.box{margin-bottom:18px}
+.today{border-left:4px solid var(--accent)}
+.todo{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.todo:first-child{border-top:none}
+.todo .n{font-size:20px;font-weight:700;min-width:36px;color:var(--accent)}
+.todo.done .n{color:var(--ok)}
+.todo div{flex:1}.todo small{display:block;color:var(--muted);font-size:12.5px}
+.job{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.job:first-child{border-top:none}
+.job div{flex:1;min-width:0}.job small{display:block;color:var(--muted);font-size:12.5px}
+.score{font-weight:700;min-width:34px;text-align:right}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:24px}.kpi span{color:var(--muted);font-size:12.5px}
+.bar-row{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:4px 0}
+.bar-row span:first-child{min-width:110px;color:var(--muted)}
+.bar-row i{height:8px;border-radius:4px;background:var(--accent);display:block}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h2{margin:0;flex:1}
+details.sec>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details.sec[open]>summary::before{transform:rotate(90deg)}
+details.sec[open]>summary{margin-bottom:10px}
+details.sec .ctl{display:flex;gap:4px;align-items:center}
+details.sec:not([open]) .ctl{display:none}
+.ctl button{padding:4px 10px;font-size:13px}
+.linkcard{display:block;margin:8px -12px 0;border-top:1px solid #e0dfdc;border-bottom:1px solid #e0dfdc;background:#eef3f8;color:inherit;text-decoration:none}
+.linkcard img{display:block;width:100%;max-height:260px;object-fit:cover}
+.linkcard .lc-t{padding:8px 12px}.linkcard .lc-t b{display:block;font-size:14px;line-height:1.3;color:#000000e6}
+.linkcard .lc-t small{font-size:12px;color:#00000099}
+/* ---- Aba Vagas (revisão 2026-10-16): tokens + cards + popover ---- */
+:root{
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp5:24px; --sp6:32px;
+  --r1:6px; --r2:10px; --r3:14px; --rf:999px;
+  --fs-xs:12px; --fs-s:13px; --fs-m:15px; --fs-l:17px;
+  --ok-ink:#17703d; --ok-bg:#e6f4ec; --warn-ink:#8a4600; --warn-bg:#fdf0e1; --bad-ink:#a8281b; --bad-bg:#fbe9e7;
+  --info-ink:#0a58a8; --info-bg:#e8f1fb; --focus:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent);
+  --hover:color-mix(in srgb,var(--ink) 4%,var(--panel)); --sel:color-mix(in srgb,var(--accent) 7%,var(--panel));
+}
+@media (prefers-color-scheme:dark){:root{
+  --ok-ink:#7ad69b; --ok-bg:#16301f; --warn-ink:#f2b066; --warn-bg:#33240f; --bad-ink:#ff9a8c; --bad-bg:#3a1b17;
+  --info-ink:#9cc9ff; --info-bg:#17283b;
+}}
+:focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r1)}
+.vg button:focus-visible,.vg select:focus-visible,.vg input:focus-visible,.pop :focus-visible,.wt :focus-visible{box-shadow:var(--focus)}
+.collect{display:flex;flex-wrap:wrap;gap:var(--sp2) var(--sp4);align-items:center;font-size:var(--fs-s);
+  padding:var(--sp2) var(--sp4);border-radius:var(--r3);border:1px solid var(--line);background:var(--panel);margin-bottom:var(--sp4)}
+.collect .dot{width:8px;height:8px;border-radius:50%;background:var(--ok-ink);display:inline-block;margin-right:var(--sp1)}
+.collect.warn{background:var(--warn-bg);border-color:transparent;color:var(--warn-ink)} .collect.warn .dot{background:var(--warn-ink)}
+.collect.bad{background:var(--bad-bg);border-color:transparent;color:var(--bad-ink)} .collect.bad .dot{background:var(--bad-ink)}
+.collect details{flex-basis:100%} .collect summary{cursor:pointer;color:var(--muted)}
+.collect ul{margin:var(--sp2) 0 0;padding-left:var(--sp5);color:var(--ink)}
+.vg{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);box-shadow:var(--shadow);margin-bottom:var(--sp5)}
+.vg-top{position:sticky;top:64px;z-index:3;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:var(--sp4);border-radius:var(--r3) var(--r3) 0 0;display:flex;flex-direction:column;gap:var(--sp3)}
+.vg-title{display:flex;align-items:baseline;gap:var(--sp3);flex-wrap:wrap}
+.vg-title h2{margin:0;font-size:var(--fs-l);letter-spacing:-.01em}
+.vg-tools{display:flex;flex-wrap:wrap;gap:var(--sp2);align-items:center}
+.vg-tools input[type=search]{flex:1 1 220px;min-width:180px}
+.vg-tools label{font-size:var(--fs-s);color:var(--muted);display:flex;gap:var(--sp1);align-items:center}
+.tog{font-size:var(--fs-s);padding:6px 12px;border-radius:var(--rf)}
+.tog[aria-pressed=true]{background:var(--info-bg);border-color:var(--info-ink);color:var(--info-ink);font-weight:600}
+.kbd-hint{font-size:var(--fs-xs);color:var(--muted)}
+kbd{font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--ink)}
+.vg-list{padding:0}
+.jc{position:relative;display:grid;grid-template-columns:56px 1fr auto;gap:var(--sp3) var(--sp4);padding:var(--sp4);border-top:1px solid var(--line);outline:none}
+.jc:first-child{border-top:none}
+.jc:hover{background:var(--hover)}
+.jc.sel{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
+.jc:focus-visible{box-shadow:inset 3px 0 0 var(--accent),var(--focus);border-radius:0}
+.jc-score{font:700 20px/1 -apple-system,BlinkMacSystemFont,sans-serif;text-align:center;padding-top:2px;color:var(--muted)}
+.jc-score small{display:block;font-size:10.5px;font-weight:500;margin-top:4px;letter-spacing:.04em;text-transform:uppercase}
+.jc-score.hi{color:var(--ok-ink)} .jc-score.mid{color:var(--ink)}
+.jc-main{min-width:0}
+.jc h3{margin:0;font-size:var(--fs-m);line-height:1.35;font-weight:600}
+.jc h3 a{color:var(--ink);text-decoration:none} .jc h3 a:hover{text-decoration:underline}
+.jc-sub{font-size:var(--fs-s);color:var(--muted);margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp2)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);font-weight:600;padding:3px 9px;border-radius:var(--rf);background:var(--chip);color:var(--ink);line-height:1.4}
+.tag.ok{background:var(--ok-bg);color:var(--ok-ink)} .tag.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.tag.info{background:var(--info-bg);color:var(--info-ink)} .tag.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.tag[title]{cursor:help}
+.jc-fit{font-size:var(--fs-s);color:var(--muted);margin-top:var(--sp2)}
+.jc-why{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
+.jc-desc{margin-top:var(--sp3);font-size:14px;line-height:1.55;white-space:pre-wrap;max-height:420px;overflow:auto;
+  background:var(--bg);border-radius:var(--r2);padding:var(--sp3) var(--sp4)}
+.jc-desc mark{background:var(--ok-bg);color:var(--ok-ink);border-radius:3px;padding:0 2px}
+.jc-act{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:132px}
+.jc-act button{font-size:var(--fs-s);padding:6px 12px}
+.jc-act .rj{color:var(--bad-ink);border-color:color-mix(in srgb,var(--bad-ink) 35%,var(--line))}
+.jc-act .rj:hover{background:var(--bad-bg)}
+.jc-act .want[aria-pressed=true]{background:var(--ok-bg);color:var(--ok-ink);border-color:var(--ok-ink);font-weight:600}
+.vg-foot{padding:var(--sp3) var(--sp4);border-top:1px solid var(--line);font-size:var(--fs-s);color:var(--muted)}
+.pop{position:absolute;right:var(--sp4);top:calc(100% - 8px);z-index:6;width:min(380px,calc(100vw - 32px));background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r3);box-shadow:0 12px 32px rgba(0,0,0,.18);padding:var(--sp4)}
+.pop h4{margin:0 0 var(--sp1);font-size:var(--fs-m)} .pop p{margin:0 0 var(--sp3);font-size:var(--fs-s);color:var(--muted)}
+.pop .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pop .opt{display:flex;gap:var(--sp2);align-items:center;font-size:var(--fs-s);padding:7px 10px;border:1px solid var(--line);border-radius:var(--r2);cursor:pointer}
+.pop .opt:hover{background:var(--hover)} .pop .opt:has(input:checked){border-color:var(--bad-ink);background:var(--bad-bg);color:var(--bad-ink);font-weight:600}
+.pop .opt kbd{margin-left:auto}
+.pop input[type=text]{width:100%;margin-top:var(--sp2)}
+.pop .row{justify-content:flex-end}
+.pop .confirm{background:var(--bad-ink);border-color:var(--bad-ink);color:var(--bad-bg);font-weight:700}
+.learn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--sp4)}
+.learn-grid h3{font-size:var(--fs-s);margin:0 0 var(--sp2);color:var(--muted);font-weight:600}
+.sug{border:1px solid var(--line);border-radius:var(--r2);padding:var(--sp3);margin-top:var(--sp2)}
+.sug b{display:block;font-size:var(--fs-s)} .sug small{color:var(--muted);display:block;margin:var(--sp1) 0 var(--sp2)}
+.wt{border-top:1px solid var(--line);padding:var(--sp4) 0} .wt:first-of-type{border-top:none;padding-top:0}
+.wt-h{display:flex;gap:var(--sp2);align-items:baseline;flex-wrap:wrap}
+.wt-h b{font-size:var(--fs-m)} .wt-h .spacer{flex:1}
+.pp{display:grid;grid-template-columns:1fr auto;gap:var(--sp2) var(--sp3);padding:var(--sp3);margin-top:var(--sp2);border:1px solid var(--line);border-radius:var(--r2)}
+.pp .who a{font-weight:600} .pp .who small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.pp textarea{grid-column:1/-1;width:100%;min-height:68px;font-size:var(--fs-s);resize:vertical}
+.pp .st{display:flex;gap:6px;flex-wrap:wrap;align-items:center;grid-column:1/-1}
+.pp .st button{font-size:var(--fs-xs);padding:4px 10px}
+.pp .st button[aria-pressed=true]{background:var(--info-bg);border-color:var(--info-ink);color:var(--info-ink);font-weight:600}
+.pp .fu{grid-column:1/-1;font-size:var(--fs-s);color:var(--warn-ink);background:var(--warn-bg);padding:6px 10px;border-radius:var(--r1)}
+.add-p{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp2)} .add-p input{flex:1 1 160px;font-size:var(--fs-s)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:720px){
+  .vg-top{position:static}
+  .jc{grid-template-columns:44px 1fr}
+  .jc-act{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;min-width:0}
+  .jc-act button{flex:1 1 30%}
+  .kbd-hint{display:none}
+  .pop{left:var(--sp3);right:var(--sp3);width:auto}
+  .pop .opts{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){.jc,.tog,.jc-act button{transition:background .12s,border-color .12s,color .12s}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="logo"><i>in</i> Agente do LinkedIn</div>
+  <span id="li-pill" class="pill">…</span>
+  <span id="slot-pill" class="pill"></span>
+  <span id="job-pill" class="pill" hidden></span>
+  <div class="spacer"></div>
+  <button class="ghost" onclick="openSettings()">Configurações</button>
+</div></header>
+
+<main>
+<nav class="views" id="views"></nav>
+
+<div class="view" data-view="hoje">
+  <section class="box today"><h2>Para fazer hoje</h2><div id="todo"></div></section>
+  <details class="box eng sec" id="con-box" open>
+    <summary><h2>1 · Conectar <span class="pill" id="con-stats"></span></h2><span class="ctl" id="con-ctl" onclick="event.preventDefault()"></span></summary>
+    <p class="hint">Copie a nota, abra o perfil e clique em <b>Conectar → Adicionar nota</b>. No plano grátis o LinkedIn limita as notas por mês; quando acabar, conecte sem nota.
+      Depois marque aqui. Quando a pessoa aceitar, a mensagem de agradecimento já sai pronta no idioma certo.</p>
+    <div id="con-accepted"></div>
+    <div id="con-list"></div>
+    <details style="margin-top:10px"><summary>Aguardando aceite <span id="con-inv-n"></span></summary><div id="con-invited"></div></details>
+    <div class="row" style="margin-top:10px"><button class="ghost" onclick="buildConnect()">Montar fila de hoje</button>
+      <button class="ghost" onclick="suggestConnect()">Buscar 1 empresa</button></div>
+  </details>
+  <details class="box eng sec" id="eng-box">
+    <summary><h2>2 · Comentar <span class="pill" id="eng-stats"></span></h2></summary>
+    <p class="hint">Comentar antes de conectar deixa o contato quente. O LinkedIn não deixa o agente ler posts. Abra o perfil da pessoa, vá em Atividade, escolha um post
+      recente, cole o texto aqui e ele escreve o comentário no seu tom.</p>
+    <div id="eng-list"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost" onclick="buildQueue()">Montar fila de hoje</button>
+    </div>
+  </details>
+</div>
+
+<div class="view" data-view="posts">
+  <section class="up">
+    <div class="box"><h2>O que vem por aí</h2><div id="pipeline"></div></div>
+    <div class="box"><h2>Próximas ideias</h2><div id="ideas"></div></div>
+  </section>
+  <div class="gen">
+    <input id="topic" placeholder="Tema opcional (ex.: como usei Claude Code para prototipar o leilão)">
+    <select id="pillar"><option value="">Pilar automático</option><option value="__trend">🔥 Tema em alta agora</option></select>
+    <button class="primary" id="gen-btn" onclick="generate()">Gerar rascunho</button>
+  </div>
+  <details class="take" id="take-box">
+    <summary>Repost with thoughts — comentar um post em alta</summary>
+    <p>Cole o link do post do LinkedIn (••• → Copiar link da publicação). Ele vai para a sua timeline como repost, com os seus comentários em cima e o post original embutido embaixo.</p>
+    <div class="row">
+      <input id="take-url" placeholder="https://www.linkedin.com/posts/… ou lnkd.in/…">
+      <button class="primary" id="take-btn" onclick="writeTake()">Escrever meus comentários</button>
+    </div>
+    <textarea id="take-src" placeholder="Recomendado: cole aqui o texto do post original. Sem ele o agente só adivinha o assunto pelo link, e o take pode não bater com o post que vai aparecer embaixo."></textarea>
+  </details>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+</div>
+
+<div class="view" data-view="vagas">
+  <div id="collect" class="collect" role="status" aria-live="polite"><span class="meta">Lendo o status da coleta…</span></div>
+  <section class="vg" aria-labelledby="vg-h">
+    <div class="vg-top">
+      <div class="vg-title"><h2 id="vg-h">Radar de vagas</h2><span class="meta" id="jobs-stats"></span></div>
+      <div class="vg-tools" role="toolbar" aria-label="Filtros e ordenação">
+        <input type="search" id="jobs-q" placeholder="Buscar empresa, cargo ou local" aria-label="Buscar vagas" oninput="renderJobs()">
+        <label>Ordenar <select id="jobs-sort" onchange="renderJobs()"><option value="score">Score</option><option value="date">Mais recentes</option></select></label>
+        <label>País <select id="jobs-country" onchange="renderJobs()"><option value="">Todos</option></select></label>
+        <button class="tog" data-f="contract" aria-pressed="false" onclick="togF(this)">Contractor/B2B</button>
+        <button class="tog" data-f="new" aria-pressed="false" onclick="togF(this)">Novas 24h</button>
+        <button class="tog" data-f="todo" aria-pressed="false" onclick="togF(this)">Não aplicadas</button>
+        <button class="tog" data-f="want" aria-pressed="false" onclick="togF(this)">Quero aplicar</button>
+        <button class="tog" data-f="pending" aria-pressed="false" onclick="togF(this)">Sem texto</button>
+      </div>
+      <div class="kbd-hint" aria-hidden="true"><kbd>J</kbd>/<kbd>K</kbd> navegar · <kbd>Enter</kbd> descrição · <kbd>O</kbd> abrir vaga · <kbd>S</kbd> quero aplicar · <kbd>R</kbd> rejeitar · <kbd>Esc</kbd> fechar</div>
+    </div>
+    <div id="jobs-list" class="vg-list" role="list" aria-label="Vagas"></div>
+    <div class="vg-foot" id="jobs-hidden"></div>
+  </section>
+  <section class="box" id="want-box" style="margin-bottom:24px">
+    <h2>Quero aplicar · pessoas para conectar</h2>
+    <p class="meta" style="margin:0 0 12px">Nada é enviado daqui: copie a nota, conecte no LinkedIn e marque o status.</p>
+    <div id="want-list"></div>
+  </section>
+  <section class="box" style="margin-bottom:24px">
+    <h2>O que aprendi com suas rejeições</h2>
+    <div id="job-patterns"></div>
+  </section>
+  <div id="sr-live" class="sr" aria-live="polite"></div>
+</div>
+
+<div class="view" data-view="candidaturas">
+  <div class="kpis" id="app-kpis"></div>
+  <section class="box"><h2>Aplicações por semana</h2><div id="app-weeks"></div></section>
+  <section class="box">
+    <h2>Candidaturas <span class="pill" id="app-stats"></span> <span class="pill" id="app-sync"></span></h2>
+    <div id="app-connect"></div>
+    <div class="row" style="margin:0 0 12px">
+      <button class="primary" id="app-sync-btn" onclick="appSync()">Sincronizar com a planilha</button>
+      <a class="btn" id="app-sheet" target="_blank">Abrir planilha ↗</a>
+      <div class="spacer"></div>
+      <input id="app-q" placeholder="Buscar empresa ou cargo" oninput="renderApps()" style="max-width:240px">
+    </div>
+    <details class="sec" id="app-add"><summary><h2>+ Registrar candidatura</h2></summary>
+      <div class="row"><input id="a-company" placeholder="Empresa"><input id="a-title" placeholder="Cargo"></div>
+      <div class="row"><input id="a-url" placeholder="Link da vaga"><button class="primary" onclick="appAdd()">Salvar</button></div>
+    </details>
+    <div id="app-list"></div>
+    <details class="sec" style="margin-top:12px"><summary><h2>Sem sincronização automática</h2></summary>
+      <p class="hint">Copie as linhas ainda não enviadas e cole na primeira linha vazia da planilha.</p>
+      <div class="row"><button onclick="appCopy()">Copiar linhas pendentes</button><button class="ghost" onclick="appSynced()">Já colei na planilha</button></div>
+    </details>
+  </section>
+</div>
+
+<div class="view" data-view="resultados">
+  <div class="kpis" id="kpis"></div>
+  <section class="box"><h2>Posts para medir</h2><p class="hint">O LinkedIn não entrega esses números por API. Abra o post, veja as estatísticas e anote aqui 48h depois de publicar.</p><div id="to-measure"></div></section>
+  <section class="box"><h2>O que está funcionando</h2><div id="learn"></div></section>
+</div>
+</main>
+
+<dialog id="settings">
+  <h3>Configurações</h3>
+  <h4>1 · Conectar LinkedIn (API oficial)</h4>
+  <p id="li-detail"></p>
+  <ol>
+    <li>Abra <a href="https://www.linkedin.com/developers/apps/new" target="_blank">linkedin.com/developers/apps/new</a>. Crie o app e associe à página <b>Your Company Page</b> (o LinkedIn exige uma página).</li>
+    <li>Na aba <b>Products</b>, adicione <b>Share on LinkedIn</b> e <b>Sign In with LinkedIn using OpenID Connect</b>.</li>
+    <li>Na aba <b>Auth</b>, em Authorized redirect URLs, adicione <code id="redir"></code></li>
+    <li>Copie o Client ID e o Client Secret para cá:</li>
+  </ol>
+  <div class="row">
+    <input id="cid" placeholder="Client ID">
+    <input id="csec" placeholder="Client Secret" type="password">
+    <button onclick="saveApp()">Salvar</button>
+  </div>
+  <div class="row">
+    <a class="btn primary" href="/auth/linkedin" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Conectar conta</a>
+    <button class="ghost danger" onclick="disconnect()">Desconectar</button>
+  </div>
+
+  <h4>2 · Aprender meu estilo</h4>
+  <p>Suba o <code>Shares.csv</code> do export do LinkedIn (Configurações → Privacidade de dados → Obter uma cópia dos seus dados → Publicações). Se preferir, cole seus posts separados por <code>---</code>.</p>
+  <input type="file" id="csv" accept=".csv,.txt,.md">
+  <textarea id="style-text" style="width:100%;min-height:110px;margin-top:8px" placeholder="Post 1…&#10;---&#10;Post 2…"></textarea>
+  <div class="row"><button id="style-btn" onclick="learnStyle()">Aprender estilo</button><span id="style-status" class="pill"></span></div>
+
+  <h4>Agenda</h4>
+  <p id="sched"></p>
+  <div class="row"><div class="spacer"></div><button onclick="settings.close()">Fechar</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const H = {'Content-Type':'application/json','X-Agent':'1'};
+let S = null, E = null, tab = 'pending', drafts = {}, takeIds = new Set();
+const TABS = [['pending','Para aprovar'],['scheduled','Agendados'],['published','Publicados'],['failed','Falhas'],['rejected','Rejeitados']];
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+const toast = m => { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2600); };
+
+async function api(path, body){
+  const r = await fetch(path, {method:'POST', headers:H, body:JSON.stringify(body||{})});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+
+async function loadEngage(){
+  E = await (await fetch('/api/engage')).json();
+  renderEngage();
+}
+
+function renderEngage(){
+  if (!E) return;
+  renderViews();
+  document.getElementById('eng-stats').textContent =
+    `${E.stats.engaged_week} esta semana · ${E.stats.jobs_pool} vagas no pool`;
+  const box = document.getElementById('eng-list');
+  const fup = E.followups.map(f => `<div class="fup">⏰ Você comentou com
+      <b>${esc(f.person || f.company)}</b> há alguns dias. Hora do convite com nota:
+      <div class="opt">${esc(f.connect_note || 'Escreva uma nota curta citando o comentário que vocês trocaram.')}</div>
+      <div class="row"><button class="ghost" onclick="engDone(${f.id},'followup-done')">Já convidei</button></div>
+    </div>`).join('');
+  const rows = E.queue.map(t => {
+    if (t.status === 'engaged') return `<div class="tgt done">✓ ${esc(t.person || t.company || t.why)}
+      ${t.got_reply ? '<span class="kind">respondeu ✓</span>'
+        : `<button class="ghost" onclick="engDone(${t.id},'replied')">O autor respondeu</button>`}</div>`;
+    if (t.status !== 'queued') return `<div class="tgt done">✓ ${esc(t.person || t.company || t.why)}</div>`;
+    const opts = t.options ? JSON.parse(t.options) : null;
+    return `<div class="tgt" id="tgt-${t.id}">
+      <div class="who">${esc(t.person || t.role)}<span class="kind">${t.kind === 'job' ? 'vaga aberta' : 'nicho'}</span></div>
+      <div class="sub">${esc(t.company ? t.company + ' — ' : '')}${esc(t.why)}
+        ${t.job_title ? `<br>Vaga: <a href="${esc(t.job_url)}" target="_blank">${esc(t.job_title)}</a>` : ''}</div>
+      <div class="links">
+        <a href="${esc(t.search_url)}" target="_blank">Achar a pessoa ↗</a>
+      </div>
+      <textarea id="pt-${t.id}" placeholder="Cole aqui o texto do post que você quer comentar">${esc(t.post_text || '')}</textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" onclick="engDraft(${t.id})">Escrever comentário</button>
+        <button class="ghost" onclick="engSkip(${t.id})">Pular</button>
+      </div>
+      ${opts ? opts.options.map(o => `<div class="opt">${esc(o.text)}
+          <div class="row">
+            <button class="ghost" onclick="copyAndDone(${t.id}, this)">Copiar e marcar como feito</button>
+          </div></div>`).join('') + (opts.verify ? `<div class="sub">⚠️ ${esc(opts.verify)}</div>` : '') : ''}
+    </div>`;
+  }).join('');
+  box.innerHTML = fup + (rows || '<div class="empty">Fila vazia. Clique em <b>Montar fila de hoje</b>.</div>');
+}
+
+
+let C = null, conShow = 5;
+async function loadConnect(){ C = await (await fetch('/api/connect')).json(); renderConnect(); if (C.finding || C.searching) setTimeout(loadConnect, 8000); }
+function langSel(c){ return `<select id="cl-${c.id}" onchange="api('/api/connect/${c.id}/lang',{lang:this.value}).then(loadConnect)">
+  <option value="en" ${c.lang!=='pt'?'selected':''}>EN</option><option value="pt" ${c.lang==='pt'?'selected':''}>PT</option><option value="es" ${c.lang==='es'?'selected':''}>ES</option></select>`; }
+function renderConnect(){
+  if (!C) return;
+  renderViews();
+  const L = C.limits;
+  document.getElementById('con-stats').textContent = `${L.today}/${L.per_day} hoje · ${L.week}/${L.week_cap} na semana`;
+  document.getElementById('con-accepted').innerHTML = C.accepted.map(c => `<div class="fup">🤝 <b>${esc(c.person || c.company)}</b> aceitou (${esc(c.company)}). Mande a mensagem:
+      <div class="opt">${esc(c.message)}</div>
+      <div class="row"><button class="primary" onclick="conCopy(${c.id}, this)">Copiar e marcar enviada</button></div></div>`).join('');
+  const full = L.left_today <= 0;
+  document.getElementById('con-list').innerHTML = full
+    ? '<div class="empty">Limite de hoje atingido. Pare por aqui para proteger a conta.</div>'
+    : (C.queue.slice(0, conShow).map(c => `<div class="tgt">
+      <div class="who">${esc(c.person)} <span class="meta">· ${esc(c.company)}</span>${c.contractor ? '<span class="kind">contrato</span>' : ''}</div>
+      <div class="sub">${esc(c.person_title || c.role)}${c.job_title ? ` · Vaga: <a href="${esc(c.job_url)}" target="_blank">${esc(c.job_title)}</a>` : ''}</div>
+      <div class="opt" id="cn-${c.id}">${esc(c.note)}</div>
+      <div class="row"><button class="primary" onclick="conOpen(${c.id}, '${esc(c.profile_url)}')">Copiar nota e abrir perfil ↗</button>
+        ${langSel(c)}
+        <button onclick="conInvited(${c.id})">Convidei ✓</button>
+        <button class="ghost" onclick="api('/api/connect/${c.id}/skip').then(loadConnect)">Pular</button></div></div>`).join('')
+      + conMore()
+      + (C.searching ? `<div class="meta" style="padding:10px 0"><span class="spin"></span> Procurando mais pessoas na web (${C.searching} empresas)… Só aparece quem tem nome e perfil confirmados.</div>` : '')
+      || '<div class="empty">Nenhuma pessoa sugerida. Clique em <b>Buscar 3</b> para uma consulta por empresa.</div>');
+  document.getElementById('con-ctl').innerHTML = (!full && C.queue.length) ? conCtl() : '';
+  document.getElementById('con-inv-n').textContent = `(${C.invited.length})`;
+  document.getElementById('con-invited').innerHTML = C.invited.map(c => `<div class="row">${esc(c.person || '—')} · ${esc(c.company)}
+      <button class="ghost" onclick="api('/api/connect/${c.id}/accepted').then(loadConnect)">Aceitou</button></div>`).join('');
+}
+function conCtl(){
+  const n = C.queue.length, shown = Math.min(conShow, n);
+  return `<span class="meta">${shown} de ${n}</span>`
+    + (n > conShow ? `<button class="ghost" onclick="conShow+=5;renderConnect()">Ver mais ▾</button>` : '')
+    + (conShow > 5 ? `<button class="ghost" onclick="conShow=5;renderConnect();document.getElementById('con-box').scrollIntoView({behavior:'smooth'})">Recolher ▴</button>` : '');
+}
+function conMore(){
+  const n = C.queue.length; if (n <= 5) return '';
+  return `<div class="row" style="justify-content:center">`
+    + (n > conShow ? `<button class="ghost" onclick="conShow+=5;renderConnect()">Ver mais ${Math.min(5, n-conShow)} ▾ <span class="meta">(${n-conShow} restantes)</span></button>` : '')
+    + (conShow > 5 ? `<button class="ghost" onclick="conShow=5;renderConnect();document.getElementById('con-box').scrollIntoView({behavior:'smooth'})">Recolher ▴</button>` : '') + '</div>';
+}
+async function buildConnect(){ try { const r = await api('/api/connect/build'); toast('Fila limpa'); loadConnect(); } catch(e){ toast(e.message); } }
+async function suggestConnect(){ try { const r = await api('/api/connect/suggest'); if (r.started || r.finding) { toast('Buscando na empresa mais recente (até 5 perfis)…'); setTimeout(loadConnect, 2000); } else { toast(`${r.found||0} perfil(is) em ${r.tried||0} empresa(s)`); } loadConnect(); } catch(e){ toast(e.message); } }
+async function conOpen(id, url){
+  try { await navigator.clipboard.writeText(document.getElementById('cn-'+id).textContent); toast('Nota copiada. No LinkedIn: Conectar → Adicionar nota → colar.'); } catch(_){}
+  window.open(url, '_blank');
+}
+async function conInvited(id){
+  try { await api(`/api/connect/${id}/invited`, {lang: document.getElementById('cl-'+id).value}); loadConnect(); }
+  catch(e){ toast(e.message); }
+}
+async function conCopy(id, btn){
+  try { await navigator.clipboard.writeText(btn.closest('.fup').querySelector('.opt').textContent); } catch(_){}
+  await api(`/api/connect/${id}/messaged`); toast('Copiado. Cole na conversa do LinkedIn.'); loadConnect();
+}
+
+const VIEWS = [['hoje','Hoje'],['posts','Posts'],['vagas','Vagas'],['candidaturas','Candidaturas'],['resultados','Resultados']];
+let view = (location.hash.match(/^#v=(\w+)/)||[])[1] || 'hoje', J = null, M = null, A = null;
+function go(v){ view = v; history.replaceState(null,'','#v='+v); renderViews(); if (v==='vagas') loadJobs(); if (v==='candidaturas') loadApps(); if (v==='resultados') loadMetrics(); }
+function badge(v){
+  if (!S || !C || !E) return 0;
+  if (v==='hoje') return C.accepted.length + (C.limits.left_today>0 ? C.queue.length : 0) + E.queue.filter(t=>t.status==='queued').length;
+  if (v==='posts') return S.posts.filter(p=>p.status==='pending'||p.status==='failed').length;
+  if (v==='vagas') return J ? J.filter(j=>j.new).length : 0;
+  if (v==='resultados') return M ? M.pending.length : 0;
+}
+function renderViews(){
+  document.getElementById('views').innerHTML = VIEWS.map(([k,l]) => { const n = badge(k);
+    return `<button class="${k===view?'on':''}" onclick="go('${k}')">${l}${n?`<b>${n}</b>`:''}</button>`; }).join('');
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('on', el.dataset.view === view));
+  renderTodo();
+}
+function renderTodo(){
+  if (!S || !C || !E) return;
+  const pend = S.posts.filter(p=>p.status==='pending').length, fail = S.posts.filter(p=>p.status==='failed').length;
+  const conLeft = C.limits.left_today>0 ? C.queue.length : 0, eng = E.queue.filter(t=>t.status==='queued').length;
+  const meas = M ? M.pending.length : 0;
+  const items = [
+    [C.accepted.length, 'Mandar mensagem para quem aceitou', 'Maior chance de conversa. Já está escrita.', "document.getElementById('con-box').scrollIntoView({behavior:'smooth'})"],
+    [pend + fail, 'Aprovar posts', fail ? `${fail} com falha para revisar` : 'Rascunhos esperando sua revisão', "go('posts');tab='"+(fail?'failed':'pending')+"';render()"],
+    [conLeft, 'Conectar com quem contrata', `${C.limits.today}/${C.limits.per_day} feitos hoje`, "document.getElementById('con-box').scrollIntoView({behavior:'smooth'})"],
+    [eng, 'Comentar em posts', 'Deixa o contato quente antes do convite', "document.getElementById('eng-box').scrollIntoView({behavior:'smooth'})"],
+    [meas, 'Anotar números dos posts', '48h depois de publicar', "go('resultados')"],
+  ];
+  const open = items.filter(i=>i[0]>0), done = items.filter(i=>!i[0]);
+  document.getElementById('todo').innerHTML = (open.length ? open : []).map(([n,t,sub,on]) =>
+    `<div class="todo"><span class="n">${n}</span><div><b>${t}</b><small>${sub}</small></div><button onclick="${on}">Fazer</button></div>`).join('')
+    + (open.length ? '' : '<div class="todo done"><span class="n">✓</span><div><b>Tudo feito por hoje</b><small>Volte amanhã às 10:30, quando as filas se renovam.</small></div></div>');
+}
+
+async function loadApps(){ A = await (await fetch('/api/applications')).json(); renderApps(); renderViews(); }
+const parseBR = d => { const m = (d||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? new Date(+m[3], +m[2]-1, +m[1]) : null; };
+const isApplied = r => r.status && r.status !== 'hunting';
+const hasInterview = r => /interview|offer/i.test(r.status + ' ' + r.outcome);
+function renderApps(){
+  if (!A) return;
+  const sh = A.sheet || {};
+  document.getElementById('app-sheet').href = A.sheet_url || '#';
+  document.getElementById('app-connect').innerHTML = sh.connected ? '' : `<div class="fup">
+    <b>Conecte a planilha para ela se atualizar sozinha.</b> Em 4 passos (uma vez só):
+    <ol style="margin:6px 0 8px 18px;padding:0">
+      <li>Na planilha: <b>Extensions → Apps Script</b>. Apague o código e cole o conteúdo do arquivo <code>sheet/apps_script.gs</code> (está na pasta do agente).</li>
+      <li><b>Deploy → New deployment</b>, no ícone de engrenagem escolha <b>Web app</b>. Execute as: <b>Me</b>. Who has access: <b>Anyone</b>. Clique em <b>Deploy</b>.</li>
+      <li>Clique em <b>Authorize access</b> e escolha sua conta (se aparecer "Google hasn't verified this app", vá em <b>Advanced → Go to … (unsafe)</b>: é o seu próprio script). Copie a <b>Web app URL</b> (termina em /exec).</li>
+      <li>Cole aqui:</li></ol>
+    <div class="row"><input id="sheet-url" placeholder="https://script.google.com/macros/s/…/exec"><button class="primary" onclick="appConnect()">Conectar</button></div></div>`;
+  document.getElementById('app-sync-btn').hidden = !sh.connected;
+  const pill = document.getElementById('app-sync');
+  pill.className = 'pill ' + (sh.error ? 'bad' : sh.connected ? 'ok' : '');
+  pill.textContent = sh.error ? ('Erro: ' + sh.error.slice(0,80)) : sh.connected ? ('planilha sincronizada ' + (sh.last ? fmt(sh.last) : '') + (A.pending ? ` · ${A.pending} pendente(s)` : '')) : `${A.pending} pendente(s) de colar`;
+  // big numbers
+  const rows = A.rows, applied = rows.filter(isApplied), today = new Date(); today.setHours(0,0,0,0);
+  const weekAgo = new Date(today - 7*864e5);
+  const thisWeek = applied.filter(r => { const d = parseBR(r.app_date); return d && d >= weekAgo; }).length;
+  const waiting = applied.filter(r => /awaiting/i.test(r.outcome) || (!r.outcome && r.status === 'applied')).length;
+  const interviews = rows.filter(hasInterview).length;
+  const rejected = rows.filter(r => /rejected/i.test(r.status)).length;
+  const due = applied.filter(r => r.status === 'applied' && r.follow_up && parseBR(r.follow_up) && parseBR(r.follow_up) <= today);
+  const rate = applied.length ? Math.round(100*interviews/applied.length) + '%' : '–';
+  document.getElementById('app-kpis').innerHTML = [
+    [applied.length, 'aplicações'], [thisWeek, 'nos últimos 7 dias'], [waiting, 'aguardando resposta'],
+    [interviews, 'entrevistas'], [rate, 'taxa de entrevista'], [rejected, 'recusadas'],
+    [due.length, 'follow-ups vencidos'], [rows.filter(r => r.status === 'hunting').length, 'caçando contato'],
+  ].map(([b,t]) => `<div class="kpi"><b>${b}</b><span>${t}</span></div>`).join('');
+  // semanas
+  const weeks = [];
+  for (let i = 7; i >= 0; i--) { const start = new Date(today - (i*7)*864e5 - ((today.getDay()+6)%7)*864e5); weeks.push({start, n: 0}); }
+  applied.forEach(r => { const d = parseBR(r.app_date); if (!d) return; for (let i = weeks.length-1; i >= 0; i--) if (d >= weeks[i].start) { weeks[i].n++; break; } });
+  const mx = Math.max(1, ...weeks.map(w => w.n));
+  document.getElementById('app-weeks').innerHTML = weeks.map(w => `<div class="bar-row"><span>${w.start.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span><i style="width:${Math.max(3, 220*w.n/mx)}px;opacity:${w.n?1:.25}"></i><small class="meta">${w.n}</small></div>`).join('');
+  document.getElementById('app-stats').textContent = `${applied.length} aplicadas · ${rows.length} no total`;
+  const q = (document.getElementById('app-q').value||'').toLowerCase();
+  const list = rows.filter(r => !q || `${r.company} ${r.job_title}`.toLowerCase().includes(q));
+  const opt = (arr, cur) => arr.map(o => `<option ${o===cur?'selected':''}>${o}</option>`).join('');
+  document.getElementById('app-list').innerHTML = list.slice(0, 60).map(r => `<div class="job">
+    <div><b>${esc(r.company)}</b> · ${r.job_url && r.job_url!=='N/A' ? `<a href="${esc(r.job_url)}" target="_blank">${esc(r.job_title)}</a>` : esc(r.job_title)}
+      ${r.synced ? '' : '<span class="kind">pendente</span>'}
+      <small>${esc(r.app_date||'sem data')}${r.contact ? ` · <a href="${esc(r.contact)}" target="_blank">contato ↗</a>` : ''}${r.follow_up ? ` · follow-up ${esc(r.follow_up)}` : ''}${r.next_steps ? ` · ${esc(r.next_steps)}` : ''}</small></div>
+    <select onchange="appSet(${r.id},{status:this.value})"><option value="">sem status</option>${opt(['applied','hunting','interview scheduled','rejected','offer'], r.status)}</select>
+    <select onchange="appSet(${r.id},{outcome:this.value})"><option value=""></option>${opt(['Awaiting Response','Interview Scheduled','Continue Applying','Offer','Rejected'], r.outcome)}</select>
+  </div>`).join('') + (list.length > 60 ? `<div class="meta" style="padding:8px 0">Mostrando 60 de ${list.length}. Use a busca.</div>` : '');
+}
+async function appConnect(){
+  try { await api('/api/applications/sheet', {url: document.getElementById('sheet-url').value}); toast('Planilha conectada. Sincronizando…'); await appSync(); }
+  catch(e){ toast('Não conectou: ' + e.message); }
+}
+async function appSync(){
+  const b = document.getElementById('app-sync-btn'); b.disabled = true; b.textContent = 'Sincronizando…';
+  try { const r = await api('/api/applications/sync'); toast(`Enviadas ${r.pushed} · novas da planilha ${r.added} · atualizadas ${r.updated}`); }
+  catch(e){ toast('Erro: ' + e.message); }
+  b.disabled = false; b.textContent = 'Sincronizar com a planilha'; loadApps();
+}
+async function appSet(id, data){ await api(`/api/applications/${id}/update`, data); loadApps(); }
+async function appAdd(){
+  const g = k => document.getElementById(k).value.trim();
+  if (!g('a-company')) return toast('Falta a empresa.');
+  try { await api('/api/applications', {company:g('a-company'), job_title:g('a-title'), job_url:g('a-url')});
+    ['a-company','a-title','a-url'].forEach(k => document.getElementById(k).value=''); toast('Registrado'); loadApps(); loadJobs(); }
+  catch(e){ toast(e.message); }
+}
+async function appCopy(){
+  const r = await (await fetch('/api/applications/tsv')).json();
+  if (!r.count) return toast('Nada novo para colar.');
+  try { await navigator.clipboard.writeText(r.tsv); toast(`${r.count} linha(s) copiada(s). Cole na primeira linha vazia da planilha.`); } catch(_){ toast('Não consegui copiar.'); }
+}
+async function appSynced(){ const r = await api('/api/applications/synced'); toast(`${r.count} linha(s) marcadas como coladas`); loadApps(); }
+async function jobApplied(i){
+  const j = JOBS_VIEW[i];
+  try { await api('/api/applications', {company:j.company, job_title:j.title, job_url:j.url}); toast('Registrado em Candidaturas'); loadJobs(); loadApps(); }
+  catch(e){ toast(e.message); }
+}
+// ---- Aba Vagas (revisão 2026-10-16): cards, rejeitar em popover, atalhos, coleta, aprendizado, conexões ----
+let JOBS_VIEW = [], JSEL = 0, JMETA = {}, JF = new Set(), JTEXT = {}, JOPEN = new Set();
+const REJ = [['remote','Não é remoto'],['spain','Espanha local'],['language','Idioma'],['seniority','Senioridade'],
+             ['currency','Moeda'],['company','Empresa/setor'],['other','Outro']];
+const ago = ms => { if (!ms) return ''; const d = Math.floor((Date.now()-ms)/86400000);
+  return d <= 0 ? 'hoje' : d === 1 ? 'ontem' : `há ${d} dias`; };
+const hhmm = ms => ms ? new Date(ms).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+const live = t => { const e = document.getElementById('sr-live'); if (e) e.textContent = t; };
+
+async function loadJobs(){
+  const r = await (await fetch('/api/jobs')).json();
+  J = r.jobs; JMETA = {hidden:r.hidden||{}, rejected:r.rejected||0};
+  const sel = document.getElementById('jobs-country');
+  if (sel) { const cur = sel.value, cs = [...new Set(J.map(j => j.country).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todos</option>' + cs.map(c => `<option${c===cur?' selected':''}>${esc(c)}</option>`).join(''); }
+  renderJobs(); renderViews(); loadCollect(); loadWant();
+}
+function togF(b){ const f = b.dataset.f, on = !JF.has(f); on ? JF.add(f) : JF.delete(f); b.setAttribute('aria-pressed', on); renderJobs(); }
+function jobFiltered(){
+  const q = (document.getElementById('jobs-q').value||'').toLowerCase(), c = document.getElementById('jobs-country').value;
+  const sort = document.getElementById('jobs-sort').value;
+  return J.filter(j => (!q || `${j.title} ${j.company} ${j.location} ${j.country}`.toLowerCase().includes(q)) && (!c || j.country === c)
+      && (!JF.has('contract') || j.contractor) && (!JF.has('new') || j.new) && (!JF.has('todo') || !j.applied)
+      && (!JF.has('want') || j.wanted) && (!JF.has('pending') || j.pending))
+    .sort(sort === 'date' ? (a,b) => (b.added||0)-(a.added||0) : (a,b) => ((b.score??0)-(a.score??0)) || ((b.added||0)-(a.added||0)));
+}
+function jobCard(j, i){
+  const sc = j.score ?? 0, cls = sc >= 80 ? 'hi' : sc >= 50 ? 'mid' : '';
+  const tags = [];
+  if (j.pending) tags.push(`<span class="tag warn" title="${esc(j.pending)}">Sem texto: abra e confira</span>`);
+  else if (j.remote && j.remote.how) tags.push(`<span class="tag ok" title="${esc(j.remote.how+': '+(j.remote.evidence||''))}">✓ Remoto confirmado</span>`);
+  if (j.contract) tags.push(`<span class="tag info">${esc(j.contract)}</span>`);
+  const cur = j.currency || {};
+  tags.push(cur.status === 'ok' && (cur.codes||[]).length ? `<span class="tag">${esc(cur.codes.join(' / '))}</span>` : '<span class="tag warn" title="O anúncio não diz a moeda">moeda?</span>');
+  if (j.new) tags.push('<span class="tag info">nova</span>');
+  if (j.applied) tags.push('<span class="tag ok">já aplicou</span>'); else if (j.company_applied) tags.push('<span class="tag warn">já aplicou na empresa</span>');
+  if (j.contact) tags.push(`<span class="tag">${esc(j.contact)}</span>`);
+  const pen = (j.penalty||[]).length ? `<div class="jc-why">Aprendido: ${esc(j.penalty.join(' · '))}</div>` : '';
+  const open = JOPEN.has(j.id);
+  return `<article class="jc${i===JSEL?' sel':''}" role="listitem" tabindex="${i===JSEL?0:-1}" data-i="${i}" id="jc-${i}" onclick="jobSel(${i},false)" aria-label="${esc(j.title)} · ${esc(j.company)}">
+    <div class="jc-score ${cls}" title="${esc((j.scoreReasons||[]).join(' · '))}">${sc}<small>score</small></div>
+    <div class="jc-main">
+      <h3><a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a></h3>
+      <div class="jc-sub">${esc(j.company)} · ${esc(j.country || j.location || 'local não informado')} · ${ago(j.added)}</div>
+      <div class="chips">${tags.join('')}</div>
+      ${(j.fit||[]).length ? `<div class="jc-fit">Combina: ${esc(j.fit.join(', '))}</div>` : ''}${pen}
+      <div class="jc-desc" id="jd-${i}" ${open?'':'hidden'}>${open ? descHtml(j) : ''}</div>
+    </div>
+    <div class="jc-act">
+      <button class="want" aria-pressed="${!!j.wanted}" onclick="event.stopPropagation();jobWant(${i})" title="Atalho: S">${j.wanted?'✓ Quero aplicar':'Quero aplicar'}</button>
+      <button aria-expanded="${open}" aria-controls="jd-${i}" onclick="event.stopPropagation();jobDesc(${i})" title="Atalho: Enter">${open?'Fechar descrição':'Descrição'}</button>
+      ${j.applied?'':`<button class="ghost" onclick="event.stopPropagation();jobApplied(${i})">Apliquei</button>`}
+      <button class="rj" aria-haspopup="dialog" onclick="event.stopPropagation();jobReject(${i})" title="Atalho: R">Rejeitar</button>
+    </div>
+  </article>`;
+}
+function renderJobs(){
+  if (!J) return;
+  JOBS_VIEW = jobFiltered();
+  JSEL = Math.min(JSEL, Math.max(0, JOBS_VIEW.length-1));
+  document.getElementById('jobs-stats').textContent =
+    `${JOBS_VIEW.length} de ${J.length} vagas · ${J.filter(j=>j.new).length} novas · ${J.filter(j=>j.contractor).length} contractor · ${J.filter(j=>j.wanted).length} quero aplicar`;
+  document.getElementById('jobs-list').innerHTML = JOBS_VIEW.map(jobCard).join('')
+    || '<div class="empty">Nenhuma vaga com esses filtros.</div>';
+  const h = Object.entries(JMETA.hidden||{}).sort((a,b)=>b[1]-a[1]);
+  const nh = h.reduce((s,[,n])=>s+n,0);
+  document.getElementById('jobs-hidden').innerHTML = (nh ? `<b>${nh}</b> vagas do pool escondidas pelas regras duras: ${h.map(([k,n])=>`${esc(k)} ${n}`).join(' · ')}. ` : '')
+    + (JMETA.rejected ? `${JMETA.rejected} rejeitada(s) por você.` : '');
+  renderJobPatterns();
+}
+function descHtml(j){
+  const t = JTEXT[j.id];
+  if (t === undefined) return '<span class="spin"></span> carregando…';
+  if (!t.text) return '<span class="meta">Sem texto guardado. Abra a vaga no site.</span>';
+  let s = esc(t.text);
+  const ev = ((t.remote||{}).evidence||'').replace(/^…/,'').split(' / ').map(x=>x.trim()).filter(x=>x.length>12);
+  for (const e of ev) { const k = s.toLowerCase().indexOf(esc(e).toLowerCase()); if (k >= 0) s = s.slice(0,k)+'<mark>'+s.slice(k,k+esc(e).length)+'</mark>'+s.slice(k+esc(e).length); }
+  return s;
+}
+async function jobDesc(i){
+  const j = JOBS_VIEW[i]; if (!j) return;
+  JOPEN.has(j.id) ? JOPEN.delete(j.id) : JOPEN.add(j.id);
+  if (JOPEN.has(j.id) && JTEXT[j.id] === undefined) {
+    renderJobs(); jobSel(i);
+    JTEXT[j.id] = await (await fetch('/api/job-text?id='+encodeURIComponent(j.id))).json();
+  }
+  renderJobs(); jobSel(i);
+}
+function jobSel(i, scroll=true){
+  if (!JOBS_VIEW.length) return;
+  JSEL = Math.max(0, Math.min(i, JOBS_VIEW.length-1));
+  document.querySelectorAll('.jc').forEach(el => { const on = +el.dataset.i === JSEL; el.classList.toggle('sel', on); el.tabIndex = on ? 0 : -1; });
+  const el = document.getElementById('jc-'+JSEL);
+  if (el && scroll) { el.focus({preventScroll:true}); el.scrollIntoView({block:'nearest'}); }
+}
+async function jobWant(i){
+  const j = JOBS_VIEW[i]; if (!j) return;
+  try { await api('/api/want/mark', {job:j, on:!j.wanted}); j.wanted = !j.wanted;
+    toast(j.wanted ? 'Marcada: Quero aplicar. Veja as pessoas para conectar abaixo.' : 'Desmarcada'); live(j.wanted ? 'Marcada' : 'Desmarcada');
+    renderJobs(); jobSel(i); loadWant(); } catch(e){ toast(e.message); }
+}
+function jobReject(i){
+  jobSel(i, false); closePop();
+  const j = JOBS_VIEW[i], card = document.getElementById('jc-'+i); if (!j || !card) return;
+  const pop = document.createElement('div');
+  pop.className = 'pop'; pop.id = 'rj-pop'; pop.setAttribute('role','dialog'); pop.setAttribute('aria-labelledby','rj-h');
+  pop.onclick = e => e.stopPropagation();
+  pop.innerHTML = `<h4 id="rj-h">Por que não serve?</h4><p>${esc(j.title)} · ${esc(j.company)}</p>
+    <div class="opts">${REJ.map(([k,l],n) => `<label class="opt"><input type="checkbox" value="${k}"> ${l}<kbd>${n+1}</kbd></label>`).join('')}</div>
+    <input type="text" id="rj-note" placeholder="Detalhe (opcional; obrigatório em Outro)" aria-label="Detalhe da rejeição">
+    <div class="row"><button class="ghost" onclick="closePop(true)">Cancelar</button><button class="confirm" onclick="jobRejectSave(${i})">Rejeitar vaga</button></div>`;
+  card.appendChild(pop);
+  pop.querySelector('input').focus();
+  pop.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); closePop(true); }
+    else if (e.key === 'Enter') { e.preventDefault(); jobRejectSave(i); }
+    else if (/^[1-7]$/.test(e.key) && e.target.id !== 'rj-note') { e.preventDefault(); const c = pop.querySelectorAll('input[type=checkbox]')[+e.key-1]; c.checked = !c.checked; c.focus(); }
+  });
+}
+function closePop(refocus){ const p = document.getElementById('rj-pop'); if (p) p.remove(); if (refocus) jobSel(JSEL); }
+async function jobRejectSave(i){
+  const pop = document.getElementById('rj-pop'), j = JOBS_VIEW[i]; if (!pop || !j) return;
+  const reasons = [...pop.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
+  const note = document.getElementById('rj-note').value.trim();
+  if (!reasons.length && !note) return toast('Marque um motivo (1–7) ou escreva o porquê.');
+  if (reasons.includes('other') && !note && reasons.length === 1) return toast('Em "Outro", escreva o motivo.');
+  try {
+    await api('/api/jobs/reject', {job:{id:j.id,url:j.url,title:j.title,company:j.company,location:j.location,country:j.country,source:j.source,score:j.score,fit:j.fit}, reasons, note});
+    closePop(); J = J.filter(x => x.url !== j.url); JMETA.rejected = (JMETA.rejected||0) + 1;
+    toast('Vaga rejeitada. Aprendi com isso.'); renderJobs(); jobSel(i); live('Vaga rejeitada');
+  } catch(e){ toast(e.message); }
+}
+async function jobUnreject(url){ await api('/api/jobs/unreject', {url}); toast('Vaga devolvida à lista'); loadJobs(); }
+document.addEventListener('keydown', e => {
+  if (view !== 'vagas' || !J || e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+  if (document.getElementById('rj-pop')) return;
+  if (typing) { if (e.key === 'Escape') t.blur(); return; }
+  const k = e.key.toLowerCase();
+  if (k === 'j') { e.preventDefault(); jobSel(JSEL+1); }
+  else if (k === 'k') { e.preventDefault(); jobSel(JSEL-1); }
+  else if (k === 'r') { e.preventDefault(); jobReject(JSEL); }
+  else if (k === 's') { e.preventDefault(); jobWant(JSEL); }
+  else if (k === 'o') { const j = JOBS_VIEW[JSEL]; if (j) window.open(j.url, '_blank', 'noopener'); }
+  else if (e.key === 'Enter' && t && t.classList && t.classList.contains('jc')) { e.preventDefault(); jobDesc(JSEL); }
+  else if (k === '/') { e.preventDefault(); document.getElementById('jobs-q').focus(); }
+});
+
+async function loadCollect(){
+  const box = document.getElementById('collect'); if (!box) return;
+  let s; try { s = await (await fetch('/api/collect-status')).json(); } catch(e){ return; }
+  if (s.missing) { box.className = 'collect warn'; box.innerHTML = '<span><span class="dot"></span>Ainda não há registro de coleta.</span>'; return; }
+  const li = s.linkedin || {}, errs = (s.sources||[]).filter(x => (x.errors||[]).length);
+  const bad = s.ok === false, warn = s.stale || li.blocked || errs.length;
+  box.className = 'collect' + (bad ? ' bad' : warn ? ' warn' : '');
+  const lab = s.excludedLabels || {};
+  const ex = Object.entries(s.excluded||{}).sort((a,b)=>b[1]-a[1]).map(([k,n]) => `${esc(lab[k]||k)} ${n}`).join(' · ');
+  const c = s.counts || {};
+  box.innerHTML = `<span><span class="dot"></span><b>${bad ? 'Última coleta falhou' : 'Última coleta'}</b> ${hhmm(s.finishedAt)}${s.ageMin!=null?` (há ${s.ageMin} min)`:''}${s.stale?' · <b>atrasada</b>: a coleta roda de hora em hora':''}</span>
+    <span>${c.new||0} novas · ${(s.pool||{}).size??''} no pool · ${c.waitingText||0} esperando texto</span>
+    <span>LinkedIn: ${li.blocked ? '<b>em pausa</b> (muitos 429)' : 'ok'}${li.http429 ? ` · ${li.http429}× 429 contornados` : ''}</span>
+    ${bad ? `<span>Erro: ${esc(s.error||'')}</span>` : ''}
+    <details><summary>Detalhes${errs.length?` · ${errs.length} fonte(s) com erro`:''}</summary><ul>
+      ${(s.sources||[]).map(x => `<li>${esc(x.name)}: ${x.found??0} vagas${(x.errors||[]).length?` · <span style="color:var(--bad-ink)">${esc(x.errors.join('; ')).slice(0,240)}</span>`:''}</li>`).join('')}
+      ${ex ? `<li>Fora nesta rodada: ${ex}</li>` : ''}
+      <li>Duração ${Math.round((s.durationMs||0)/60000)} min · histórico: ${(s.history||[]).slice(0,12).map(h => `<span title="${hhmm(h.at)}" style="color:${h.ok?'var(--ok-ink)':'var(--bad-ink)'}">●</span>`).join('')}</li>
+    </ul></details>`;
+}
+
+async function renderJobPatterns(){
+  const box = document.getElementById('job-patterns'); if (!box) return;
+  const p = (await (await fetch('/api/jobfeedback')).json()).patterns;
+  if (!p.total) { box.innerHTML = '<p class="meta">Ainda não aprendi nada. Rejeite uma vaga com um motivo e os padrões aparecem aqui.</p>'; return; }
+  const max = Math.max(...p.reasons.map(r => r.count), 1);
+  const L = p.learned || {}, pen = (o, t) => Object.entries(o||{}).map(([k,v]) => `<span class="tag bad">${esc(k)} ${v}</span>`).join(' ') || `<span class="meta">nenhuma ${t} ainda</span>`;
+  box.innerHTML = `<div class="learn-grid">
+    <div><h3>Motivos (${p.total} rejeições)</h3>${p.reasons.map(r => `<div class="bar-row"><span>${esc(r.label)}</span><i style="width:${Math.max(4,140*r.count/max)}px"></i><small class="meta">${r.count}</small></div>`).join('')}</div>
+    <div><h3>Penalidade no ranking</h3><small class="meta">${esc(L.rule||'')}</small>
+      <div style="margin-top:8px">Empresas: ${pen(L.company,'empresa')}</div><div style="margin-top:6px">Países: ${pen(L.country,'país')}</div><div style="margin-top:6px">Palavras: ${pen(L.word,'palavra')}</div></div>
+    <div><h3>Sugestões de regra dura (só com sua aprovação)</h3>${(p.suggestions||[]).map(s => `<div class="sug"><b>${esc(s.text)}</b><small>Ex.: ${esc(s.examples.join(' · '))}</small>
+      <div class="row" style="margin:0"><button onclick="ruleAct('${s.id}','approve')">Aprovar regra</button><button class="ghost" onclick="ruleAct('${s.id}','dismiss')">Dispensar</button></div></div>`).join('') || '<p class="meta">Nenhuma: aparece quando o mesmo motivo se repete 3 vezes.</p>'}
+      ${(p.approved||[]).length ? `<h3 style="margin-top:12px">Regras aprovadas</h3>${p.approved.map(a => `<div class="meta">${esc(a.label)}</div>`).join('')}` : ''}</div>
+  </div>
+  ${p.notes.length ? `<details style="margin-top:12px"><summary>Suas justificativas (${p.notes.length})</summary>${p.notes.map(n => `<div><small>${esc(n.title)} · ${esc(n.company)}:</small> ${esc(n.note)}</div>`).join('')}</details>` : ''}`;
+}
+async function ruleAct(id, action){
+  if (action === 'approve' && !confirm('Aprovar? A regra passa a excluir vagas na coleta e no painel (com backup do job-criteria.json).')) return;
+  try { await api('/api/jobs/rule', {id, action}); toast(action === 'approve' ? 'Regra aprovada' : 'Sugestão dispensada'); loadJobs(); } catch(e){ toast(e.message); }
+}
+
+let W = null;
+async function loadWant(){ W = await (await fetch('/api/want')).json(); renderWant(); }
+const ST_FLOW = [['queued','A conectar'],['invited','Enviei'],['accepted','Aceitou'],['replied','Respondeu']];
+function renderWant(){
+  const box = document.getElementById('want-list'); if (!box || !W) return;
+  if (!W.wants.length) { box.innerHTML = '<p class="meta">Nenhuma vaga marcada. Selecione uma vaga e aperte <kbd>S</kbd> (ou o botão Quero aplicar).</p>'; return; }
+  box.innerHTML = `<div class="row" style="margin:0 0 8px"><button class="ghost" onclick="wantDaily()">Copiar lista do dia</button></div>` + W.wants.map((w,wi) => `<div class="wt">
+    <div class="wt-h"><b>${esc(w.job.company)}</b><span>${esc(w.job.title)}</span><a href="${esc(w.url)}" target="_blank" rel="noopener">abrir vaga</a><span class="spacer"></span>
+      <button onclick="wantFind(${wi}, this)">${w.people.length ? 'Buscar mais pessoas' : 'Buscar pessoas'}</button></div>
+    <div class="add-p"><span class="meta">Buscar no LinkedIn (abre no seu navegador):</span>${(w.search_links||[]).map(l => `<a class="tag info" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>
+    ${w.search_note ? `<small class="meta">Última busca automática: ${esc(w.search_note)}</small>` : ''}
+    ${w.people.map(p => `<div class="pp">
+      <div class="who">${p.profile_url ? `<a href="${esc(p.profile_url)}" target="_blank" rel="noopener">${esc(p.person || 'perfil')}</a>` : esc(p.person)} · ${esc(p.role)}
+        <small>${esc(p.title)}</small><small>Por quê: ${esc(p.why)}</small></div>
+      <span class="tag ${p.status==='replied'?'ok':p.status==='queued'?'':'info'}">${esc(p.status_ui)}</span>
+      ${p.followup ? `<div class="fu">Lembrete: ${esc(p.followup)}</div>` : ''}
+      <textarea readonly id="nt-${p.id}" aria-label="Nota de convite">${esc(p.status==='accepted' ? p.message : p.note)}</textarea>
+      <div class="st"><button onclick="copyText('nt-${p.id}')">${p.status==='accepted' ? 'Copiar mensagem' : 'Copiar nota'} (${(p.status==='accepted'?p.message:p.note).length} car.)</button>
+        <span class="meta">Status:</span>${ST_FLOW.map(([k,l]) => `<button aria-pressed="${p.status===k}" onclick="wantAct(${p.id},'${k}')">${l}</button>`).join('')}
+        <button class="ghost" onclick="wantAct(${p.id},'skip')">Descartar</button></div>
+    </div>`).join('')}
+    <div class="add-p"><input id="ap-u-${wi}" placeholder="Colar perfil linkedin.com/in/…" aria-label="Link do perfil"><input id="ap-n-${wi}" placeholder="Nome" aria-label="Nome">
+      <select id="ap-r-${wi}" aria-label="Papel"><option value="recruiter">Recrutador</option><option value="manager">Hiring manager</option><option value="designer">Designer do time</option></select>
+      <button class="ghost" onclick="wantAdd(${wi})">Adicionar</button></div>
+  </div>`).join('');
+}
+async function wantFind(wi, btn){
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> buscando…';
+  try { const r = await api('/api/want/find', {url:W.wants[wi].url}); toast(`${r.added} pessoa(s) nova(s)` + (r.errors.length ? ' · ' + r.errors.join('; ') : '')); }
+  catch(e){ toast(e.message); }
+  loadWant();
+}
+async function wantAdd(wi){
+  try { await api('/api/want/add', {url:W.wants[wi].url, profile:document.getElementById('ap-u-'+wi).value, name:document.getElementById('ap-n-'+wi).value, role:document.getElementById('ap-r-'+wi).value}); loadWant(); }
+  catch(e){ toast(e.message); }
+}
+async function wantAct(id, action){ try { await api('/api/want/act', {id, action}); loadWant(); } catch(e){ toast(e.message); } }
+async function copyText(id){ const el = document.getElementById(id); await navigator.clipboard.writeText(el.value); toast('Copiado. Cole no LinkedIn e envie você mesmo.'); }
+async function wantDaily(){ const r = await (await fetch('/api/want/daily')).json(); await navigator.clipboard.writeText(r.text); toast('Lista do dia copiada'); }
+
+async function loadMetrics(){ M = await (await fetch('/api/metrics')).json(); renderMetrics(); renderViews(); }
+function renderMetrics(){
+  if (!M) return;
+  const s = M.summary, f = C ? C.funnel : {invited:0,accepted:0,messaged:0};
+  const pct = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
+  const pub = S ? S.posts.filter(p=>p.status==='published').length : 0;
+  document.getElementById('kpis').innerHTML = [
+    [pub, 'posts publicados'], [`${s.measured}/${pub}`, 'posts medidos'],
+    [f.invited, 'convites enviados'], [pct(f.accepted,f.invited), `aceitaram (${f.accepted})`],
+    [f.messaged, 'mensagens enviadas'], [`${s.comments.replied}/${s.comments.total}`, 'comentários com resposta'],
+  ].map(([b,t]) => `<div class="kpi"><b>${b}</b><span>${t}</span></div>`).join('');
+  document.getElementById('to-measure').innerHTML = M.pending.length ? M.pending.map(p => `<div class="tgt">
+      <div class="who">${esc(p.topic)}</div><div class="sub">Publicado ${fmt(p.published_at)}</div>
+      ${metricsForm({id:p.id})}</div>`).join('') : '<div class="meta">Nada para medir agora.</div>';
+  const bars = (obj, names) => { const e = Object.entries(obj); if (!e.length) return '';
+    const max = Math.max(...e.map(([,v])=>v[0])) || 1;
+    return e.sort((a,b)=>b[1][0]-a[1][0]).map(([k,[v,n]]) => `<div class="bar-row"><span>${esc((names||{})[k]||k)}</span>
+      <i style="width:${Math.max(4,160*v/max)}px"></i><small class="meta">${n} posts</small></div>`).join(''); };
+  const top = s.top.map(p => `<div class="step"><span class="k">${p.has_impressions?(100*p.rate).toFixed(1)+'%':p.rate+' interações'}</span><span>${esc(p.topic)}</span></div>`).join('');
+  document.getElementById('learn').innerHTML = s.measured < 3
+    ? `<div class="meta">Com ${s.measured} post(s) medido(s) ainda não dá para tirar conclusão. A partir de 3 aparecem os melhores posts; com 2 por pilar ou formato, a comparação.</div>`
+    : `<h2>Melhores posts</h2>${top}<h2 style="margin-top:14px">Por pilar</h2>${bars(s.by_pillar, S&&S.pillars)||'<span class="meta">pouca amostra</span>'}
+       <h2 style="margin-top:14px">Por formato</h2>${bars(s.by_format)||'<span class="meta">pouca amostra</span>'}`;
+}
+async function buildQueue(){
+  try { const r = await api('/api/engage/build'); toast(`${r.count} alvo(s) na fila`); loadEngage(); }
+  catch(e){ toast(e.message); }
+}
+async function engDraft(id){
+  const txt = document.getElementById('pt-'+id).value.trim();
+  if (txt.length < 40) return toast('Cole o texto do post primeiro.');
+  toast('Escrevendo…');
+  try { await api(`/api/engage/${id}/draft`, {post_text: txt}); loadEngage(); }
+  catch(e){ toast(e.message); }
+}
+async function engSkip(id){
+  await api(`/api/engage/${id}/skip`, {reason: ''}); loadEngage();
+}
+async function engDone(id, action){
+  await api(`/api/engage/${id}/${action}`, {}); loadEngage();
+}
+async function copyAndDone(id, btn){
+  const text = btn.closest('.opt').firstChild.textContent.trim();
+  try { await navigator.clipboard.writeText(text); } catch(_){}
+  await api(`/api/engage/${id}/done`, {comment: text});
+  toast('Copiado. Cole no LinkedIn — o follow-up entra na fila.');
+  loadEngage();
+}
+
+async function load(){
+  S = await (await fetch('/api/state')).json();
+  const L = S.linkedin;
+  const pill = document.getElementById('li-pill');
+  pill.className = 'pill ' + (L.connected ? 'ok' : 'bad');
+  pill.textContent = L.connected ? `● ${L.name || 'LinkedIn'} conectado` : '● LinkedIn desconectado';
+  document.getElementById('slot-pill').textContent = 'Próximo horário: ' + fmt(S.next_slot);
+  const jp = document.getElementById('job-pill');
+  jp.hidden = !S.jobs.generating && !S.jobs.last_error;
+  jp.innerHTML = S.jobs.generating ? '<span class="spin"></span> Escrevendo com Claude…' : `<span class="err">Erro: ${esc(S.jobs.last_error).slice(0,120)}</span>`;
+  document.getElementById('gen-btn').disabled = !!S.jobs.generating;
+  const sel = document.getElementById('pillar');
+  if (sel.options.length === 1) for (const [k,v] of Object.entries(S.pillars)) sel.add(new Option(v,k));
+  render();
+  renderViews();
+}
+
+function render(){
+  const count = s => S.posts.filter(p => p.status === s).length;
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l]) =>
+    `<button class="tab ${k===tab?'on':''}" onclick="tab='${k}';render()">${l}${count(k)?`<b>${count(k)}</b>`:''}</button>`).join('');
+  takeIds = new Set(S.posts.filter(p => p.format==='take').map(p => p.id));
+  renderUpcoming();
+  const posts = S.posts.filter(p => p.status === tab);
+  const list = document.getElementById('list');
+  // não re-renderiza cards em edição
+  if (document.activeElement && document.activeElement.tagName === 'TEXTAREA' && list.dataset.tab === tab) return;
+  list.dataset.tab = tab;
+  list.innerHTML = posts.length ? posts.map(card).join('') :
+    `<div class="empty">${tab==='pending' ? 'Nenhum rascunho aguardando. Clique em <b>Gerar rascunho</b> ou espere o próximo ciclo automático.' : 'Nada aqui ainda.'}</div>`;
+  posts.forEach(p => updatePreview(p.id));
+}
+
+function renderUpcoming(){
+  const sched = S.posts.filter(p => p.status==='scheduled').sort((a,b) => a.scheduled_at.localeCompare(b.scheduled_at));
+  const pend = S.posts.filter(p => p.status==='pending');
+  const last = S.posts.filter(p => p.status==='published').sort((a,b) => (b.published_at||'').localeCompare(a.published_at||''))[0];
+  const nextGen = S.config.generate_at.join(', ');
+  const rows = [];
+  if (last) rows.push(['Último post', `${esc(last.topic)} <span class="meta">· ${fmt(last.published_at)}</span>`]);
+  rows.push(['Agendado', sched.length ? sched.map(p => `<a href="#post-${p.id}" onclick="tab='scheduled';render()">${esc(p.topic)}</a> <span class="meta">· ${fmt(p.scheduled_at)}</span>`).join('<br>') : '<span class="meta">nada agendado</span>']);
+  rows.push(['Para aprovar', pend.length ? pend.map(p => `<a href="#post-${p.id}" onclick="tab='pending';render()">${esc(p.topic)}</a>`).join('<br>') : `<span class="meta">nenhum. O próximo rascunho sai às ${esc(nextGen)}</span>`]);
+  if (S.jobs.generating) rows.push(['Agora', '<span class="spin"></span> escrevendo o próximo…']);
+  document.getElementById('pipeline').innerHTML = rows.map(([k,v]) => `<div class="step"><span class="k">${k}</span><span>${v}</span></div>`).join('');
+  document.getElementById('ideas').innerHTML = (S.ideas||[]).length ? S.ideas.map((i,n) =>
+    `<div class="idea"><div><b>${esc(i.title)}</b><small>${esc(i.angle)}</small></div><span class="kind">${esc(i.kind||'')}</span>
+     <button onclick="writeIdea(${n})" ${S.jobs.generating?'disabled':''}>Escrever</button></div>`).join('')
+    : '<span class="meta">As ideias aparecem aqui depois do primeiro rascunho.</span>';
+}
+async function writeTake(){
+  const url = document.getElementById('take-url').value.trim(), src = document.getElementById('take-src').value.trim();
+  if (!url) return toast('Cole o link do post que você quer repostar');
+  const b = document.getElementById('take-btn'); b.disabled = true;
+  try { await api('/api/take', {url, source: src});
+    document.getElementById('take-url').value=''; document.getElementById('take-src').value='';
+    document.getElementById('take-box').open = false;
+    toast('Escrevendo seu take…'); tab='pending'; load(); }
+  catch(e){ toast('Erro: '+e.message); }
+  b.disabled = false;
+}
+
+async function writeIdea(n){
+  const i = S.ideas[n];
+  try { await api('/api/generate', {topic:`${i.title}. ${i.angle}`}); toast('Escrevendo…'); tab='pending'; load(); } catch(e){ toast(e.message); }
+}
+
+// O LinkedIn não expõe métricas por API (escopo só de escrita), então os números
+// vêm daqui. São eles que alimentam o "WHAT ACTUALLY PERFORMED" das próximas gerações.
+function metricsForm(p){
+  if (p.metrics_at) return `<span class="pill ok" title="Já contabilizado no aprendizado">
+    ${p.impressions||'–'} impr · ${p.reactions||0} reações · ${p.comments_count||0} coment.</span>
+    <button class="ghost" onclick="showMetrics(${p.id})">Editar números</button>`;
+  return `<div class="mrow" id="m-${p.id}">
+    <span class="meta">Desempenho:</span>
+    <input placeholder="impressões" id="mi-${p.id}" inputmode="numeric">
+    <input placeholder="reações" id="mr-${p.id}" inputmode="numeric">
+    <input placeholder="comentários" id="mc-${p.id}" inputmode="numeric">
+    <input placeholder="reposts" id="ms-${p.id}" inputmode="numeric">
+    <button onclick="saveMetrics(${p.id})">Salvar</button></div>`;
+}
+function showMetrics(id){
+  const p = S.posts.find(x => x.id === id);
+  p.metrics_at = null; render();
+}
+async function saveMetrics(id){
+  const v = k => document.getElementById(k+'-'+id).value.trim();
+  if (!v('mi') && !v('mr')) return toast('Preencha pelo menos impressões ou reações.');
+  await api(`/api/posts/${id}/metrics`, {impressions:v('mi'), reactions:v('mr'), comments:v('mc'), shares:v('ms')});
+  toast('Registrado. Entra no aprendizado do próximo rascunho.');
+  load(); loadMetrics();
+}
+
+function card(p){
+  const d = drafts[p.id] || {text:p.text, fc:p.first_comment||''};
+  const editable = p.status === 'pending' || p.status === 'failed' || p.status === 'scheduled';
+  const pl = S.pillars[p.pillar] || p.pillar;
+  let actions = '';
+  if (p.status === 'pending' || p.status === 'failed') actions = `
+    <button class="primary" onclick="approve(${p.id},'slot')">Aprovar · ${fmt(S.next_slot)}</button>
+    <button onclick="approve(${p.id},'now')">Publicar agora</button>
+    <button onclick="approve(${p.id},'later')">Daqui a ${S.later_hours}h</button>
+    <button onclick="regen(${p.id})">Reescrever com nota…</button>
+    <div class="spacer"></div>
+    <button class="ghost danger" onclick="reject(${p.id})">Rejeitar</button>`;
+  else if (p.status === 'scheduled') actions = `
+    <button onclick="save(${p.id})">Salvar edição</button>
+    <button onclick="approve(${p.id},'now')">Publicar agora</button>
+    <div class="spacer"></div><button class="ghost" onclick="act(${p.id},'unschedule')">Voltar p/ rascunho</button>`;
+  else if (p.status === 'published') actions = (p.linkedin_urn ?
+    `<a class="btn" target="_blank" href="https://www.linkedin.com/feed/update/${encodeURIComponent(p.linkedin_urn)}">Ver no LinkedIn ↗</a>` : '')
+    + metricsForm(p);
+  else actions = `<button onclick="act(${p.id},'unschedule')">Restaurar</button><div class="spacer"></div><button class="ghost danger" onclick="act(${p.id},'delete')">Excluir</button>`;
+  return `<article class="card" id="post-${p.id}">
+    <div class="card-h"><span class="pill">${esc(pl)}</span><span class="pill">${esc(p.format||'')}</span>
+      <span class="t">${esc(p.topic||'Sem título')}</span><div class="spacer"></div>
+      <span class="meta">${p.status==='scheduled'?'⏱ '+fmt(p.scheduled_at):p.status==='published'?'✓ '+fmt(p.published_at):fmt(p.created_at)}</span></div>
+    <div class="grid">
+      <div class="edit">
+        <textarea id="tx-${p.id}" ${editable?'':'readonly'} oninput="draft(${p.id})">${esc(d.text)}</textarea>
+        <label class="meta">Primeiro comentário (link do portfólio vai aqui, não no post)</label>
+        <textarea class="fc" id="fc-${p.id}" ${editable?'':'readonly'} oninput="draft(${p.id})" placeholder="Opcional">${esc(d.fc)}</textarea>
+        <div class="meta" id="m-${p.id}"></div>
+        ${p.rationale?`<div class="why">💡 ${esc(p.rationale)}</div>`:''}
+        ${p.feedback&&p.status==='rejected'?`<div class="why">Sua nota: ${esc(p.feedback)}</div>`:''}
+        ${p.error?`<div class="err">${esc(p.error)}</div>`:''}
+      </div>
+      <div class="prev"><div class="li">
+        <div class="li-h"><div class="av">YN</div><div><b>Your Name</b><small>Your headline</small><small>agora · 🌐</small></div></div>
+        <div class="li-body" id="pv-${p.id}"></div>
+        ${p.parent_urn?`<div class="reshare"><b>↻ Repost with thoughts</b><br>O post original aparece embutido aqui — <a href="${esc(p.source_url||'https://www.linkedin.com/feed/update/'+p.parent_urn)}" target="_blank">abrir no LinkedIn ↗</a></div>`:''}
+      </div></div>
+    </div>
+    <div class="actions">${actions}</div>
+  </article>`;
+}
+
+function draft(id){
+  drafts[id] = {text:document.getElementById('tx-'+id).value, fc:document.getElementById('fc-'+id).value};
+  updatePreview(id);
+}
+
+function renderLinkCard(id){
+  const p = (S && S.posts || []).find(x => x.id === id), pv = document.getElementById('pv-'+id);
+  if (!pv) return;
+  let card = document.getElementById('lc-'+id);
+  if (!p || !p.link_url || p.parent_urn) { if (card) card.remove(); return; }
+  if (!card) { card = document.createElement('a'); card.id = 'lc-'+id; card.className = 'linkcard'; card.target = '_blank'; pv.insertAdjacentElement('afterend', card); }
+  let dom = ''; try { dom = new URL(p.link_url).hostname.replace(/^www\./,''); } catch(e){}
+  card.href = p.link_url;
+  card.innerHTML = (p.link_image ? `<img src="${esc(p.link_image)}" referrerpolicy="no-referrer" onerror="this.remove()">` : '') +
+    `<div class="lc-t"><b>${esc(p.link_title || p.link_url)}</b><small>${esc(dom)}</small></div>`;
+}
+function updatePreview(id){
+  const t = document.getElementById('tx-'+id).value;
+  const FOLD = 210;
+  const lines = t.split('\n'); // LinkedIn corta em ~3 linhas ou ~210 caracteres
+  let cut = Math.min(FOLD, lines.slice(0,3).join('\n').length);
+  const pv = document.getElementById('pv-'+id);
+  pv.innerHTML = esc(t.slice(0,cut)) + (t.length > cut ? `<span class="more">…ver mais</span><div class="fold">↑ o que aparece antes do "ver mais" (gancho)</div>${esc(t.slice(cut))}` : '');
+  renderLinkCard(id);
+  const tags = (t.match(/#\w+/g)||[]).length, links = /https?:\/\//.test(t);
+  document.getElementById('m-'+id).innerHTML = [
+    `<span class="${t.length>3000?'warn':''}">${t.length}/3000 caracteres</span>`,
+    `<span class="${(t.length < (takeIds.has(id)?300:600) || t.length > (takeIds.has(id)?1000:1800))?'warn':''}">ideal ${takeIds.has(id)?'350–900 (repost)':'700–1600'}</span>`,
+    `<span class="${tags>3?'warn':''}">${tags} hashtags</span>`,
+    links ? '<span class="warn">link no corpo reduz alcance</span>' : ''
+  ].join('');
+}
+
+async function generate(){
+  const pv = document.getElementById('pillar').value;
+  try { await api('/api/generate', {topic:document.getElementById('topic').value, pillar:pv==='__trend'?'':pv, mode:pv==='__trend'?'trend':null});
+    document.getElementById('topic').value=''; toast('Gerando… leva ~1 min'); tab='pending'; load(); }
+  catch(e){ toast(e.message); }
+}
+async function approve(id, when){
+  const d = drafts[id]; if (when==='now' && !confirm('Publicar agora no LinkedIn?')) return;
+  try { const r = await api(`/api/posts/${id}/approve`, {when, text:document.getElementById('tx-'+id).value, first_comment:document.getElementById('fc-'+id).value});
+    delete drafts[id]; toast(when==='now'?'Publicado ✓':'Agendado ✓ '+(r.result&&when!=='now'?fmt(r.result):'')); load(); }
+  catch(e){ toast('Erro: '+e.message); load(); }
+}
+async function save(id){ await api(`/api/posts/${id}/save`, {text:document.getElementById('tx-'+id).value, first_comment:document.getElementById('fc-'+id).value}); delete drafts[id]; toast('Salvo'); load(); }
+async function reject(id){ const f = prompt('O que não funcionou? (o agente aprende com isso)'); if (f===null) return; await api(`/api/posts/${id}/reject`, {feedback:f}); toast('Rejeitado'); load(); }
+async function regen(id){ const f = prompt('O que mudar? Ex.: "gancho mais forte, menos lista, fala do -36% → +51%"'); if (!f) return; await api(`/api/posts/${id}/regenerate`, {feedback:f}); delete drafts[id]; toast('Reescrevendo…'); load(); }
+async function act(id, a){ await api(`/api/posts/${id}/${a}`); load(); }
+
+function openSettings(){
+  const L = S.linkedin;
+  document.getElementById('redir').textContent = L.redirect_uri;
+  document.getElementById('li-detail').textContent = L.connected ? `Conectado como ${L.name}. O token expira em ${fmt(L.expires_at)} (o LinkedIn exige reconectar a cada 60 dias; você recebe um aviso antes).` : (L.app_configured ? 'App salvo. Falta clicar em Conectar conta.' : 'Ainda não configurado.');
+  document.getElementById('sched').textContent = `Gera rascunhos: ${S.config.generate_at.join(', ')} · Publica: ${S.config.publish_slots.join(', ')} (${S.config.timezone}). Idioma: ${S.config.language}. Para editar, abra config.json.`;
+  document.getElementById('style-status').textContent = S.style_learned ? 'Estilo aprendido ✓' : 'Usando estilo inicial';
+  settings.showModal();
+}
+async function saveApp(){ try { await api('/api/linkedin/app', {client_id:cid.value, client_secret:csec.value}); toast('App salvo. Agora clique em Conectar conta.'); load(); } catch(e){ toast(e.message); } }
+async function disconnect(){ await api('/api/linkedin/disconnect'); toast('Desconectado'); load(); settings.close(); }
+async function learnStyle(){
+  let text = document.getElementById('style-text').value;
+  const f = document.getElementById('csv').files[0]; if (f) text = await f.text();
+  if (!text.trim()) return toast('Envie o CSV ou cole os posts');
+  const b = document.getElementById('style-btn'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Analisando…';
+  try { const r = await api('/api/style', {text}); toast(`Estilo aprendido de ${r.count} posts ✓`); load(); document.getElementById('style-status').textContent='Estilo aprendido ✓'; }
+  catch(e){ toast('Erro: '+e.message); }
+  b.disabled = false; b.textContent = 'Aprender estilo';
+}
+
+function focusHash(){
+  const m = location.hash.match(/^#post-(\d+)/);
+  if (m) go('posts');
+  if (m) { const el = document.getElementById('post-'+m[1]); if (el){ el.scrollIntoView({behavior:'smooth'}); el.classList.add('flash'); } }
+  if (location.hash === '#connected') { toast('LinkedIn conectado ✓'); history.replaceState(null,'','/'); }
+}
+load().then(focusHash);
+loadEngage(); loadConnect(); loadJobs(); loadMetrics(); loadApps();
+setInterval(load, 4000);
+// A fila muda pouco e cada render recria os textarea; 30s evita apagar o que você está colando.
+setInterval(() => { if (!document.querySelector('.tgt textarea:focus')) loadEngage(); }, 30000);
+</script>
+</body>
+</html>

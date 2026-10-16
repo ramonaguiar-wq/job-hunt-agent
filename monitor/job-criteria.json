@@ -1,0 +1,1002 @@
+{
+  "version": 2,
+  "updatedAt": "2026-10-16",
+  "about": [
+    "Regras duras de vaga do candidato: Product Designer IC (Pleno, Sênior ou Staff), mora em Valência, sem permiso de trabalho espanhol como empregado.",
+    "Quer 100% remoto, contratado por empresa de fora da Espanha (contractor/B2B ou EOR tipo Deel), pago em EUR/USD/GBP, trabalho em inglês (português só em vaga de Portugal).",
+    "Lido por monitor/filters.js (coleta e pool) e por agent/criteria.py (painel). Os dois aplicam as mesmas regras; test-criteria.js prova isso.",
+    "Padrões: sintaxe comum a JS e Python. Sem lookbehind, sem grupo nomeado, sem flags inline. O texto chega normalizado e em minúsculas; \\b, \\w e \\s são ASCII nos dois.",
+    "Os padrões rodam sem flag de caixa: escreva tudo em minúsculas (test-criteria.js reprova maiúscula fora de escape).",
+    "'$' só pode aparecer em exceptBefore: esse teste roda na oração antes do achado, que nunca tem quebra de linha.",
+    "Guardas por padrão: exceptBefore olha a oração antes do achado, exceptAfter olha o que vem logo depois (começa com ^), unless cancela o padrão se casar em qualquer lugar do mesmo texto.",
+    "Negação vale pra todo achado: 'no relocation', 'not hybrid', 'relocation not required' não contam.",
+    "Tirar uma chave de 'order' desliga a exclusão por ela; o achado continua aparecendo em hits."
+  ],
+  "order": [
+    "closed",
+    "seniority",
+    "learned",
+    "country",
+    "ats_onsite",
+    "ats_hybrid",
+    "onsite",
+    "relocation",
+    "authorization",
+    "needs_description",
+    "spain_local",
+    "no_remote",
+    "language",
+    "currency"
+  ],
+  "engine": {
+    "negationWindow": 40,
+    "guardWindow": 60,
+    "afterWindow": 50,
+    "placeWindow": 260,
+    "evidenceContext": 70,
+    "clauseSplit": "[.;:!?\\n|•·—–,()]",
+    "guardSplit": "[.;:!?\\n|•·]",
+    "sentenceSplit": "[.!?\\n;•]",
+    "minDescriptionChars": 200,
+    "minLangTokens": 30,
+    "minLangHits": 5,
+    "tokenPattern": "[a-zß-öø-ÿā-žșț]+",
+    "amount": "(\\d{1,3}([.,\\s]\\d{3})+|\\d{4,}|\\d+([.,]\\d+)?\\s?(k|m)\\b)",
+    "negationBefore": "\\b(no|not|non|without|never|nor|neither|isn't|aren't|don't|doesn't|won't|cannot|can't|sin|sem|nem|ni|não|nao)\\b",
+    "negationIgnore": "\\b(no|not) (more|less|fewer|later|earlier) than\\b|\\bnot (only|just)\\b|\\bno matter\\b|\\bnon-negotiable\\b|\\bno doubt\\b",
+    "negationAfter": "^[\\s)\\]\"',-]*(is |are |will be |is also )?(not|no longer|never) (required|needed|necessary|provided|offered|possible|available|an option|supported|expected|mandatory|a requirement)",
+    "syntheticLocationPrefix": "^remote (european union|emea|united kingdom|ireland|united states|spain|europe) · "
+  },
+  "rules": {
+    "closed": {
+      "label": "vaga fechada",
+      "ui": "Outro",
+      "explain": "A página da vaga sumiu (404/410) ou diz 'No longer accepting applications'."
+    },
+    "seniority": {
+      "label": "senioridade fora do alvo",
+      "ui": "Senioridade",
+      "explain": "Alvo: Pleno ou Sênior IC. Lead, Head, Manager, Director, Staff, Principal e júnior/estágio saem (decisão do candidato 16/10 15:24). Olha só o título.",
+      "patterns": [
+        {
+          "re": "\\b(lead|leader|head|manager|director|vp|vice president|chief|principal|staff|intern|internship|trainee|junior|jr|entry[- ]level|graduate|apprentice|werkstudent|working student|stagiaire|praktikant|becario|estagi[aá]rio)\\b",
+          "unless": [
+            "\\b(ads|ad|campaign|asset|password|tag|task|business|account|content|project|event|expense|package|relationship|portfolio|identity|access|order|inventory|fleet|property|wealth|risk|workflow|case|incident|device|release|feature|policy|consent|data) manager\\b",
+            "\\blead[- ]?(gen|generation|management|scoring|routing|capture|forms?|nurturing)\\b"
+          ]
+        }
+      ],
+      "metaPatterns": [
+        "\\binternship\\b"
+      ]
+    },
+    "learned": {
+      "label": "regra aprendida",
+      "ui": "Empresa/setor",
+      "explain": "Regras que o candidato aprovou a partir das rejeições (painel → Aprendizado). Ficam em \"learned\" no fim deste arquivo."
+    },
+    "country": {
+      "label": "país/região fora do alcance",
+      "ui": "Não é remoto",
+      "explain": "Vaga presa a região ou país onde o candidato não pode trabalhar (LATAM, APAC, Canadá...), 'US only'/'UK only', ou, nas fontes que informam onde o candidato precisa morar, um lugar fora da lista.",
+      "headPatterns": [
+        "\\b(latam|latin america|south america|apac|asia[- ]pacific|india|canada|mexico|brazil|brasil|australia|new zealand|philippines|south africa|argentina|colombia|chile|peru|uruguay|costa rica|nigeria|kenya|egypt|pakistan|bangladesh|vietnam|indonesia|malaysia|singapore|japan|china|korea)\\b"
+      ],
+      "headUnless": "(worldwide|anywhere|global|europe|european|emea|\\beu\\b|\\beea\\b|spain|españa|espanha|\\bcet\\b|\\bgmt\\b|\\butc\\b|united kingdom|\\buk\\b|ireland|portugal|united states|\\busa?\\b)",
+      "textPatterns": [
+        "\\b(latam|latin america|south america|apac|asia|india|canada|mexico|brazil|brasil|australia|new zealand|philippines|americas|north america|us|u\\.s\\.|usa|united states|uk|united kingdom)[- ]only\\b",
+        "\\b(open|available|restricted|limited) (only )?to (candidates |applicants |residents |people |those )?((based|located|living|residing) )?in (the )?(latam|latin america|south america|apac|asia|india|canada|mexico|brazil|brasil|australia|new zealand|philippines|americas|north america|us|u\\.s\\.|usa|united states)\\b",
+        {
+          "re": "\\b(remote(ly)?|from home|home[- ]based|teletrabajo|remoto),? (but |only |but only |exclusively )?(with)?in (the )?(uk|united kingdom|england|britain|us|u\\.s\\.|usa|united states|canada|sweden|denmark|norway|finland|germany|france|italy|netherlands|belgium|poland|portugal|ireland|switzerland|austria|czechia|czech republic|greece|romania|hungary|estonia|latvia|lithuania|israel|india|brazil|mexico|latam|latin america)\\b",
+          "exceptAfter": [
+            "^[^.\\n]{0,40}\\b(europe|european|emea|eu|eea|spain|españa|worldwide|anywhere|global|globally)\\b"
+          ]
+        }
+      ],
+      "candidateLocation": {
+        "explain": "Nessas fontes o campo de local diz onde o candidato pode morar. Só passa lugar onde o candidato pode morar: Espanha, Europa/EMEA, mundo todo ou um fuso (CET/GMT/UTC). 'United States' ou 'United Kingdom' sozinhos ali querem dizer residente desses países: QBench, Grafana e iDelsoft foram rejeitadas no painel por isso.",
+        "sources": [
+          "remoteok",
+          "remotive",
+          "himalayas",
+          "weworkremotely"
+        ],
+        "allowed": "(worldwide|anywhere|global|remote|europe|european|emea|\\beu\\b|\\beea\\b|spain|españa|espanha|\\bcet\\b|\\bcest\\b|\\bgmt\\b|\\butc\\b)"
+      },
+      "headUnlessExplain": "Achado no título só é anulado por headUnless no próprio título; achado no local é anulado por headUnless no título ou no local ('Remote - Europe' com local Canadá passa; 'Product Designer (LATAM, Remote)' com local United States sai)."
+    },
+    "onsite": {
+      "label": "presencial/híbrido",
+      "ui": "Não é remoto",
+      "explain": "Híbrido, presencial ou dias fixos no escritório. Frase explícita (dias no escritório, 'this role is hybrid') só passa se o anúncio der a opção remota da vaga ('or remote', 'fully remote'). Palavra solta ('hybrid', 'on-site') passa também com cultura remota ('remote-first').",
+      "explicit": [
+        "\\b(\\d|one|two|three|four|five)( ?(-|to|or) ?(\\d|two|three|four|five))? ?(days?|x|times) (a|per|each|every|/|in a) ?(week|wk|month)\\b[^.\\n]{0,40}\\b(office|offices|hq|headquarters|on-?site|onsite|in[- ]person|studio|campus|hub)\\b",
+        "\\b(office|offices|hq|headquarters|on-?site|onsite|in[- ]person|studio|campus)\\b[^.\\n]{0,30}\\b(\\d|one|two|three|four|five)( ?(-|to|or) ?(\\d|two|three|four|five))? ?(days?|x|times) (a|per|each|every|/|in a) ?(week|wk|month)\\b",
+        "\\b(\\d|one|two|three|four|five)( ?(-|to|or) ?(\\d|two|three|four|five))? ?days? (a week |per week |each week |a month |per month )?(in|at|from) (the |our |an |a )?(office|offices|hq|headquarters|studio|campus|hub)\\b",
+        "\\b(\\d|one|two|three|four)( ?(-|to) ?(\\d|two|three|four))? days? (of )?(remote|remotely|wfh|home ?office|working from home|work from home|teletrabajo|teletrabalho|da remoto|en remoto|de teletrabajo|t[ée]l[ée]travail) ?(a|per|each|por|al|à|na|a la|alla|par) (week|semana|settimana|semaine)\\b",
+        "\\bremote(ly)? (for |up to |on )?(\\d|one|two|three|four)( ?(-|to) ?(\\d|two|three|four))? days? (a|per|each|every) (week|month)\\b",
+        "\\b(giorni|giorno|d[ií]as|dias|jours|tage|dagen)\\b[^.\\n]{0,40}\\b(ufficio|uffici|oficina|oficinas|escrit[óo]rio|bureau|bureaux|sede|presenza|presencial|presenciales|remoto|teletrabajo|teletrabalho|t[ée]l[ée]travail|b[üu]ro|kantoor)\\b",
+        "\\b(must|required to|expected to|need to|needs to|will need to|have to) (work|be|come|commute|attend)( in| at| from| to| into)? (the|our|one of our) (office|offices|hq|headquarters|studio|campus)\\b",
+        "\\b(office attendance|attendance (in|at) (the|our) office|return[- ]to[- ]office|in[- ]office (presence|attendance|days?|requirement))\\b",
+        "\\b(this|the) (role|position|job|opportunity|vacancy) (is|will be|is a|is an) (a |an )?(fully )?(hybrid|on-?site|onsite|in[- ]office|office[- ]based|in[- ]person)\\b",
+        "\\b(hybrid|on-?site|onsite|in[- ]office|office[- ]based) (role|position|job|contract|working model|work model|work arrangement|working arrangement|arrangement|setup|set-up|model|schedule|working|work|basis)\\b",
+        "\\b(modalidad|modelo|r[ée]gimen|jornada|trabajo|modalit[àa]|lavoro|travail|modalidade|regime) (de trabajo |di lavoro |de travail |de trabalho )?(h[ií]brid[oa]|ibrid[oa]|hybride|presencial|in presenza|sur site|en pr[ée]sentiel)\\b"
+      ],
+      "explicitExceptBefore": [
+        "\\b(optional(ly)?|if you (want|wish|prefer|like)|you can|you may|option to|welcome to|free to)\\b",
+        "\\b(for|enable|enabling|enables|support|supporting|future of|era of|world of|platform for|tools for|solutions? for|products? for|power|powering|powers|about)\\s*$"
+      ],
+      "explicitExceptAfter": [
+        "^[^.\\n]{0,40}\\b(if you (want|wish|prefer|like)|optional(ly)?|if desired|not mandatory)\\b"
+      ],
+      "labels": [
+        "\\b(on-?site|onsite)\\b",
+        "\\b(in[- ]office|office[- ]based|office[- ]first)\\b",
+        "\\b(hybrid|hybride|h[ií]brid[oa]|ibrid[oa])\\b",
+        "\\b(presencial|presenciales|presencialidad|in sede|in presenza|sur site|pr[ée]sentiel|vor ort|im b[üu]ro|op kantoor|op locatie|no escrit[óo]rio|en la oficina|en nuestras? oficinas?)\\b",
+        "\\bin[- ]person\\b"
+      ],
+      "labelsExceptAfter": [
+        "^[\\s-]*(team |company |all-hands |design )?(meet-?ups?|visits?|workshops?|events?|retreats?|gatherings?|off-?sites?|travel|trips?|sessions?|interviews?|onboarding|kick-?offs?|research|usability|user (research|testing|interviews)|testing|tests?|collaboration (opportunit|events?|sessions?)|mobile|cloud|native|apps?|application|applications|vehicles?|cars?|engines?|energy|search|ux|ui|ux/ui|ui/ux|design|designer|product designer|design engineer|skill ?set|profile|role (combining|that combines|between|mixing|blending)|combining|between design|of design|of ux|ocasional|ocasionales|puntual|puntuales|opcional|opcionales|intelligence|well-?being|wellness|gym|canteen|cafeteria|restaurant|kitchen|parking|child ?care|daycare|massages?|lunch(es)?|meals?|chef|doctor|physio(therapy)?|yoga|fitness|amenities|facilities|perks?|benefits?)\\b",
+        "^[\\s,-]*((is|are|is also|are also) )?(optional|occasional|possible but not required|welcome but not required|available if|encouraged but)",
+        "^[^.\\n]{0,25}\\b(once|twice|a few times|few times|several times|\\d+ times|two times|three times|four times|\\d-\\d times)( a| per| each| every) (year|quarter)\\b",
+        "^[^.\\n]{0,25}\\b(quarterly|annual|annually|yearly|bi-?annual|semi-?annual)\\b"
+      ],
+      "labelsExceptBefore": [
+        "\\b(optional(ly)?|occasional(ly)?|quarterly|annual(ly)?|yearly|twice a year|few times a (year|quarter)|once a (quarter|year)|from time to time|if you (want|wish|prefer|like)|if desired|access to|can (also )?(use|work from|join)|option to|welcome to|free to|team (meetups?|gatherings?|offsites?|retreats?|events?)|company (offsites?|retreats?|events?))\\b",
+        "\\b(meet|meeting|meets|get together|gathering|come together|see each other|connect|collaborate|catch up)( up)?\\s*$",
+        "\\b(for|enable|enabling|enables|support|supporting|future of|era of|world of|platform for|tools for|solutions? for|products? for|power|powering|powers|about)\\s*$",
+        "\\b(appear|interview(s|ed|ing)?|entretiens?( [a-zé]+)?|lunch(es)?|meals?|breakfast|snacks?|drinks|coffee|fruit|gym|parking|massages?)\\s*$"
+      ]
+    },
+    "relocation": {
+      "label": "relocation/local obrigatório",
+      "ui": "Não é remoto",
+      "explain": "Pede mudança de cidade/país, morar numa cidade, ou distância de deslocamento até o escritório. Vale mesmo com 'remote' no anúncio, a não ser que o lugar seja compatível (Espanha, Europa/UE/EMEA, fuso horário, qualquer lugar).",
+      "patterns": [
+        {
+          "re": "\\brelocat(e|ion|ing)\\b",
+          "exceptBefore": [
+            "\\b(if you (want|wish|would like|prefer|choose|decide)|optional(ly)?|no need)\\b",
+            "\\b(also|alternatively|optionally|can (also )?(help|support|assist|discuss|offer|provide)|happy to (help|support|discuss))\\b"
+          ],
+          "exceptAfter": [
+            "^[\\s,]*(is |are )?(optional|available if|possible if)"
+          ]
+        },
+        {
+          "re": "\\bbased (in|at|out of) ",
+          "exceptBefore": [
+            "\\b(we|we're|we are|us|company|startup|business|firm|agency|studio|hq|headquarters|headquartered|office|offices|team|teams|colleagues|employees|members|clients?|customers?|users|investors?|founders?|partners?|engineers|designers|people|everyone|staff|organi[sz]ation|group|which|who|that|ourselves|itself|operations|entity|lead|leads|leader|leaders|manager|managers|head|director|ceo|cto|cpo|vp|boss|supervisor|counterparts?|stakeholders?|pms?)( (is|are|'re|is also|are also|all|currently|primarily|mainly|mostly|proudly|largely|fully))*[\\s,]*$"
+          ],
+          "exceptAfter": [
+            "^[^.\\n]{0,50}\\b(or|and/or) (fully |100% )?remote(ly)?\\b"
+          ]
+        },
+        {
+          "re": "\\b(must|should|need to|needs to|will need to|are required to|have to|required to)( currently| already)? (be )?(located|based|living|residing|resident|live|reside|situated)( in| within| near| close to)\\b"
+        },
+        {
+          "re": "\\b(candidates|applicants|you|residents|talent) (who are |that are |must be |should be )?(based|located|living|residing) (in|within|near) "
+        },
+        {
+          "re": "\\b(open|available|restricted|limited) (only )?to (candidates|applicants|residents|people|those) (based|located|living|residing|who (live|reside)) (in|within) "
+        },
+        {
+          "re": "\\b(within|in|at a) (a )?(reasonable )?commut(ing|able) distance\\b"
+        },
+        {
+          "re": "\\bcommut(e|ing|able) (to|into) (the|our) (office|offices|hq)\\b"
+        },
+        {
+          "re": "\\b(looking for|seeking|hiring|considering|accepting|recruiting) (candidates|applicants|people|talent)( who are| that are)?( currently)?( based| located| living| residing)? (in|within) "
+        }
+      ],
+      "placeOk": "^[\\s,:]*(the )?(eu\\b|eea\\b|europe|european|emea\\b|spain\\b|españa|espanha|valencia|val[eè]ncia|anywhere|any (country|location|eu|european|of)|your (home|own|country|current)|a (european|eu|cet|gmt|utc|similar|compatible|country|location|time ?zone)|an (eu|eea|emea|european)|cet\\b|cest\\b|gmt|utc|wet\\b|eet\\b|(\\d+|one|two|three|four|five|six|a few|few) (\\+ )?hours? (of|from|difference)|similar time ?zones?|[a-z]+ time ?zones?|time ?zones?|(one of |any of )?(the |these )?following (countries|locations|regions|time ?zones|states)[\\s\\S]{0,200}\\b(spain|españa|europe|eu|eea|emea|anywhere|worldwide)\\b|(a |an )?(country|location|place) (of your choice|you choose))"
+    },
+    "authorization": {
+      "label": "exige autorização de trabalho no país",
+      "ui": "Não é remoto",
+      "explain": "\"Must be authorized to work in X\", \"right to work in X\", cidadania ou clearance. Só não conta quando X é o país onde a pessoa já mora. 'No visa sponsorship' sozinho não exclui.",
+      "patterns": [
+        "\\b(authori[sz]ed|eligible|permitted|entitled|allowed) to (legally )?work (in|within) ",
+        "\\bauthori[sz]ed to (legally )?work for ",
+        "\\bable to legally work (in|within|for) ",
+        "\\b(right|authori[sz]ation|eligibility|permit|permission|entitlement|legal right) to work (in|within|for) ",
+        "\\b(work|working|employment) (authori[sz]ation|permit|visa|eligibility) (in|for|within) ",
+        "\\b(us|u\\.s\\.|uk|eu|eea|european|british|american|canadian|irish|german|dutch|french|swiss|australian|valid) (work|working|employment) (authori[sz]ation|permit|visa|eligibility)\\b[^.\\n]{0,20}\\b(required|needed|mandatory|a must|necessary)\\b",
+        "\\b(us|u\\.s\\.|uk|british|american|eu) (citizens?|citizenship|nationals?|residents?)( only| is required| required)\\b",
+        "\\b(security clearance|green card)\\b"
+      ],
+      "exceptAfter": [
+        "^[\\s,]*(your|the country (where|in which|of)|any|their|his|her|one of the countries|a country where|the countries (where|in which|listed))\\b"
+      ]
+    },
+    "needs_description": {
+      "label": "sem texto da vaga",
+      "ui": "Outro",
+      "explain": "Sem texto da vaga (ou curto demais) não dá pra decidir. Busca a descrição e decide depois; enquanto isso a vaga não aparece no painel."
+    },
+    "spain_local": {
+      "label": "Espanha local",
+      "ui": "Espanha local",
+      "explain": "Vaga na Espanha só passa se o anúncio mostrar contratação por empresa de fora: EOR (Deel, Oyster...), contractor, freelance ou contrato B2B. Sem isso é contratação local, que exige permiso de trabalho. Freelance/contractor para empresa sediada na Espanha sem EOR/entidade estrangeira: label 'confirmar: freelance empresa espanhola' (pode ser contratação local).",
+      "places": "\\b(spain|españa|espanha|madrid|barcelona|valencia|valència|valencian|sevilla|seville|m[áa]laga|bilbao|zaragoza|alicante|murcia|asturias|catalonia|catalu[ñn]a|catalunya|andalusia|andaluc[ií]a|basque|pa[ií]s vasco|galicia|pozuelo|torrej[óo]n|guillena|cardedeu|las rozas|alcobendas|sant cugat|granada|valladolid|vigo|gij[óo]n|oviedo|palma de mallorca|mallorca|canary islands|islas canarias|tenerife|las palmas|castell[óo]n|tarragona|girona|lleida|santander|pamplona|san sebasti[áa]n|donostia|vitoria|salamanca|burgos|c[áa]diz|huelva|almer[ií]a|elche|cartagena|badajoz|c[áa]ceres|albacete|logro[ñn]o|a coru[ñn]a|la coru[ñn]a|ourense|pontevedra|navarra|cantabria|arag[óo]n|extremadura|la rioja)\\b",
+      "headPatterns": [
+        "\\bremote(ly)? (in|within|from) spain\\b",
+        "\\bspain[- ]based\\b",
+        "\\bremote[- ]spain\\b",
+        "\\bspain \\(remote\\)",
+        "\\bremote \\(spain\\)"
+      ],
+      "foreignOk": [
+        "\\b(hire|hires|hired|hiring|employ|employs|employed|employment|engage|engaged|onboard|onboarded|contract|contracted|payroll|paid)\\b[^.\\n]{0,60}\\b(through|via|using|by|with) (an? |our |a local )?(eor|employer of record|deel|letsdeel|oyster ?hr|oysterhr|remote\\.com|papaya global|globalization partners|velocity global|remofirst|safeguard global|native teams)\\b|\\b(through|via) (an? |our )?(eor|employer of record|eor partner|employment partner)\\b|\\b(eor|employer of record)\\b[^.\\n]{0,30}\\b(option|available|possible|arrangement|basis|model|setup|set-up)\\b",
+        "\\b(independent )?contractors?\\b",
+        "\\b(contract|freelance|b2b) (role|position|basis|contract|engagement|agreement|opportunity|project)\\b",
+        "\\b(freelance|freelancer|self-employed|aut[óo]nomo|aut[óo]noma)\\b"
+      ],
+      "spanishBase": "\\b(based|headquartered|located|hq|offices?) (in|at) (our )?(barcelona|madrid|valencia|sevilla|seville|malaga|bilbao|zaragoza|alicante|spain)\\b|\\b(our|the) (barcelona|madrid|valencia|sevilla|seville|malaga|bilbao) (office|hq|headquarters)\\b|\\bspanish (entity|company|startup)\\b",
+      "foreignEntity": "\\b(eor|employer of record|deel|oyster|remote\\.com|foreign entity|(us|uk|german|dutch|estonian|irish|delaware) (entity|company|corporation))\\b"
+    },
+    "no_remote": {
+      "label": "sem confirmação remota",
+      "ui": "Não é remoto",
+      "explain": "Nenhuma frase do anúncio diz que é remoto. A tag do LinkedIn (f_WT=2) e o prefixo \"Remote <região>\" do coletor antigo não contam. 'Remote friendly' sem outra confirmação não exclui: vira label 'confirmar: remote friendly' (CRITERIOS_VAGAS.md). Texto genérico de benefícios ('hybrid roles require…; fully remote roles include…') não confirma: vira label 'confirmar: remoto genérico'. Em vaga vinda do LinkedIn, 'Remote' só no título ou no local não conta: precisa de frase remota no corpo do anúncio. Local declarado pelo próprio ATS (job.atsLocation, ex.: 'Global - Remote', 'Remote - EMEA') ou atsWorkplace=remote conta como frase remota, salvo se o local cita hybrid/onsite ou região fora (US, Americas, APAC…). Não anula ats_hybrid/ats_onsite, país nem spain_local.",
+      "friendly": "\\bremote[- ]friendly\\b",
+      "genericEvidence": "\\b(fully )?remote roles?\\b",
+      "genericContext": "\\bhybrid roles?\\b",
+      "linkedinBodyOnly": true,
+      "atsLocationRemote": "\\b(remote|home[- ]based|work from anywhere|anywhere|worldwide|distributed)\\b",
+      "atsLocationNot": "\\b(hybrid|on[- ]?site|office)\\b|\\b(us|u\\.s\\.|usa|united states|canada|north america|americas|latam|apac|asia|australia|india|uk only)\\b"
+    },
+    "remoteOption": {
+      "explain": "Opção remota da própria vaga. Confirma remoto e anula 'hybrid'/'on-site' e frases de dias no escritório.",
+      "patterns": [
+        "\\b(fully|completely|entirely|totally|full|100 ?%|100 per ?cent)[- ]?remote(ly)?\\b",
+        "\\bremote[- ]only\\b",
+        "\\bwork(ing)? (remotely )?from anywhere\\b",
+        "\\b(hire|hiring|recruit|recruiting|work|working|live|living|based|located|join us|apply) (from |in )?anywhere in the world\\b",
+        "\\blocation[- ]independent\\b",
+        "\\b(hybrid|h[ií]brid[oa]|ibrid[oa]|hybride|on-?site|onsite|in[- ]office|office[- ]based|office|in[- ]person)( role| position| work| working| model)?,? ?(or|and/or|o|ou|oder|/|\\|) ?(fully |100% )?(remote(ly)?|remot[oa]|t[ée]l[ée]travail)\\b",
+        "\\bremote(ly)?( \\([^)\\n]{1,40}\\))?,? ?(or|and/or|/|\\|) ?(hybrid|on-?site|onsite|in[- ]office|office[- ]based|office|in[- ]person)\\b",
+        "\\b(this|the) (role|position|job|opportunity|vacancy) (is|can be|will be) (fully |100% |completely )?(remote|done remotely|performed remotely|worked remotely|based remotely)\\b",
+        "\\bremote (role|position|job|opportunity|vacancy|contract|contractor|freelancer?|consultant|consultancy|engagement|hire|employee|team member|designer|product designer|ux designer|ui designer|ux/ui designer|ui/ux designer)\\b",
+        "\\b(work|working|based|located|live|living|operate|operating) (fully )?remotely (from|in|within|across|anywhere)\\b",
+        "\\bremote(ly)? (in|within|across|from|throughout) (the )?(europe|european union|eu|eea|emea|uk|united kingdom|us|usa|united states|spain|portugal|ireland|any|anywhere|world|worldwide|north america|americas|cet|cest|gmt|utc|[a-z]+ time ?zones?)\\b",
+        "\\bremote ?\\((europe|eu|eea|emea|uk|us|usa|spain|portugal|ireland|worldwide|global|anywhere|cet|gmt|utc)[^)\\n]{0,30}\\)",
+        "\\b(location|workplace|work type|work model|work arrangement|work location|job type|job location|modality|work mode|remote status|working model|arrangement) ?[:\\n] ?(fully |100% )?remote\\b",
+        "\\b(100 ?%|totalmente|completamente|full) ?-?(remoto|remota|en remoto|teletrabajo)\\b",
+        "\\bteletrabajo (100 ?%|total|completo)\\b",
+        "\\b(posici[óo]n|puesto|vaga|posi[çc][ãa]o|empleo|rol|vacante) (100 ?% )?(remoto|remota|en remoto)\\b",
+        "\\bremote[ ,/-]+(worldwide|global|globally|anywhere|europe|emea|eu|eea|uk|us|usa|spain|portugal|cet|gmt|utc)\\b"
+      ],
+      "exceptAfter": [
+        "^[\\s,]*(for |up to |on |at least )?(\\d|one|two|three|four)( ?(-|to) ?(\\d|two|three|four))? days?\\b",
+        "^[\\s,]*(and|y|e|\\+|&|with|con|com) (presencial|on-?site|onsite|in[- ]office|office|h[ií]brido|hybrid|in[- ]person|oficina)\\b",
+        "^[\\s,]*(part of the week|some days|occasionally|partially|part[- ]time|when needed)",
+        "^[\\s-]*(company|companies|team|teams|culture|organi[sz]ation|business|startup|start-up|workforce|environment|employer)\\b"
+      ],
+      "exceptBefore": [
+        "\\b(partial(ly)?|partly)\\b",
+        "\\b(unless|except|apart from|other than|stated as|explicitly)\\b"
+      ]
+    },
+    "remoteCulture": {
+      "explain": "Cultura remota da empresa. Confirma remoto e anula um 'hybrid'/'on-site' solto, mas não uma frase explícita de dias no escritório. 'Distributed team/company' (inclusive 'globally distributed') NÃO confirma remoto (16/10).",
+      "patterns": [
+        "\\bremote[- ](first|native|by default|all the way)\\b",
+        "\\ball[- ]remote\\b",
+        "\\b(fully|100 ?%|completely|entirely) remote (company|team|organi[sz]ation|business|startup|start-up|workforce|culture|employer)\\b",
+        "\\ball (of )?(our )?(roles|positions|jobs) are (fully )?remote\\b"
+      ],
+      "exceptAfter": [],
+      "exceptBefore": [
+        "\\b(experience|experienced|track record|background|comfortable|used to|familiar(ity)?|(work|working|collaborat\\w*|partner\\w*|communicat\\w*|align\\w*|coordinat\\w*) (closely )?(with|across|in|within))\\b[^.\\n]*$"
+      ]
+    },
+    "remoteConfirm": {
+      "explain": "Outras frases que confirmam remoto (sem anular 'hybrid'). Remote/Anywhere/Worldwide no título ou no local também vale. \"Remote friendly\" (ambiente/cultura/empresa) sozinho não confirma: precisa de outra frase explícita.",
+      "patterns": [
+        "\\(\\s*remote\\b",
+        "\\bremote\\s*\\)",
+        "\\n\\s*remote\\s*(\\n|\\(|,|-(?!friendly)|–|—)",
+        "\\bremote (team|company|workforce|organi[sz]ation|culture|setup|set-up|environment)\\b",
+        "\\b(work|working) remotely\\b",
+        "\\bremote (work|working)\\b",
+        "\\bwork(ing)? from home\\b",
+        "\\b(remoto|remota|en remoto|teletrabajo|teletrabalho|home office)\\b",
+        "\\b(mainly|mostly|primarily|predominantly|largely) remote(ly)?\\b",
+        "\\bfrom (the comfort of )?(your )?(own )?home or (from )?anywhere\\b"
+      ],
+      "headPatterns": [
+        "\\b(remote|anywhere|worldwide)\\b"
+      ],
+      "exceptAfter": [
+        "^[\\s,]*(for |up to |on |at least )?(\\d|one|two|three|four)( ?(-|to) ?(\\d|two|three|four))? days?\\b",
+        "^[\\s-]*(work )?(allowance|stipend|budget|days?|policy|weeks?|fridays?|option for|possibilities|possibility|flexibility|equipment|set-?up allowance|usability|user|research|testing|tests|interviews?|workshops?|collaboration tools|tools)\\b"
+      ],
+      "exceptBefore": [
+        "\\b(partial(ly)?|partly|some|occasional(ly)?|hybrid|part of the week|days? of|days? per week|flexible)\\b"
+      ]
+    },
+    "language": {
+      "label": "idioma",
+      "ui": "Idioma",
+      "explain": "Trabalho em inglês, espanhol ou português (CRITERIOS_VAGAS.md). Anúncio escrito em PT/ES não sai. Exigir fluência em outro idioma (francês, alemão, italiano, holandês, polonês, japonês, chinês etc.) sai. Inglês, espanhol e português exigidos não saem.",
+      "allowed": [
+        "en",
+        "es",
+        "pt"
+      ],
+      "allowedWhenPlace": {
+        "pt": "\\b(portugal|lisboa|lisbon|porto|braga|coimbra|faro|aveiro)\\b"
+      },
+      "names": {
+        "en": "inglês",
+        "es": "espanhol",
+        "pt": "português",
+        "fr": "francês",
+        "de": "alemão",
+        "it": "italiano",
+        "nl": "holandês",
+        "pl": "polonês",
+        "sv": "sueco",
+        "da": "dinamarquês/norueguês",
+        "fi": "finlandês",
+        "cs": "tcheco",
+        "hu": "húngaro",
+        "ro": "romeno"
+      },
+      "stopwords": {
+        "en": [
+          "the",
+          "and",
+          "with",
+          "you",
+          "your",
+          "our",
+          "will",
+          "for",
+          "are",
+          "this",
+          "that",
+          "we",
+          "of",
+          "is",
+          "have",
+          "who",
+          "what",
+          "from",
+          "about",
+          "or",
+          "at",
+          "by",
+          "be",
+          "they",
+          "it",
+          "can",
+          "all",
+          "which",
+          "their",
+          "has",
+          "been",
+          "would",
+          "should",
+          "must",
+          "more",
+          "into",
+          "across",
+          "help",
+          "build",
+          "looking"
+        ],
+        "es": [
+          "el",
+          "los",
+          "las",
+          "con",
+          "para",
+          "que",
+          "una",
+          "del",
+          "por",
+          "como",
+          "más",
+          "nuestro",
+          "nuestra",
+          "nuestros",
+          "equipo",
+          "experiencia",
+          "trabajo",
+          "también",
+          "sus",
+          "ser",
+          "puesto",
+          "buscamos",
+          "ofrecemos",
+          "empresa",
+          "se",
+          "en",
+          "es",
+          "al",
+          "lo",
+          "muy",
+          "está",
+          "están",
+          "tu",
+          "tus",
+          "conocimientos",
+          "desarrollo",
+          "diseño"
+        ],
+        "pt": [
+          "você",
+          "nós",
+          "com",
+          "uma",
+          "não",
+          "experiência",
+          "equipe",
+          "são",
+          "sua",
+          "seu",
+          "das",
+          "dos",
+          "na",
+          "ao",
+          "pelo",
+          "pela",
+          "mais",
+          "vaga",
+          "oferecemos",
+          "em",
+          "um",
+          "os",
+          "da",
+          "do",
+          "é",
+          "ou",
+          "conhecimento",
+          "desenvolvimento",
+          "seus",
+          "suas"
+        ],
+        "fr": [
+          "et",
+          "les",
+          "des",
+          "avec",
+          "pour",
+          "nous",
+          "vous",
+          "une",
+          "dans",
+          "est",
+          "équipe",
+          "sur",
+          "du",
+          "au",
+          "aux",
+          "vos",
+          "notre",
+          "nos",
+          "votre",
+          "sont",
+          "qui",
+          "ce",
+          "cette",
+          "il",
+          "elle",
+          "ou",
+          "le",
+          "la",
+          "un",
+          "de",
+          "pas",
+          "expérience",
+          "être",
+          "poste"
+        ],
+        "de": [
+          "und",
+          "der",
+          "die",
+          "das",
+          "mit",
+          "für",
+          "wir",
+          "sie",
+          "ein",
+          "eine",
+          "nicht",
+          "erfahrung",
+          "ist",
+          "zu",
+          "von",
+          "auf",
+          "im",
+          "dem",
+          "den",
+          "des",
+          "dich",
+          "dein",
+          "deine",
+          "unser",
+          "unsere",
+          "bei",
+          "als",
+          "auch",
+          "oder",
+          "sind",
+          "werden",
+          "wird",
+          "kenntnisse",
+          "sowie",
+          "deinen",
+          "ihre"
+        ],
+        "it": [
+          "il",
+          "della",
+          "per",
+          "che",
+          "siamo",
+          "nostro",
+          "nostra",
+          "esperienza",
+          "di",
+          "gli",
+          "dei",
+          "delle",
+          "nel",
+          "nella",
+          "sono",
+          "è",
+          "alla",
+          "anche",
+          "più",
+          "lavoro",
+          "cerchiamo",
+          "offriamo",
+          "conoscenza",
+          "sviluppo",
+          "tua",
+          "tuo"
+        ],
+        "nl": [
+          "het",
+          "een",
+          "met",
+          "voor",
+          "wij",
+          "jij",
+          "naar",
+          "ervaring",
+          "bij",
+          "zijn",
+          "van",
+          "je",
+          "jouw",
+          "ons",
+          "onze",
+          "ook",
+          "op",
+          "te",
+          "niet",
+          "wordt",
+          "worden",
+          "dat",
+          "er",
+          "wat",
+          "kennis",
+          "werken"
+        ],
+        "pl": [
+          "się",
+          "nie",
+          "jest",
+          "oraz",
+          "dla",
+          "jak",
+          "od",
+          "że",
+          "ze",
+          "przez",
+          "pracy",
+          "doświadczenie",
+          "zespół",
+          "będziesz",
+          "oferujemy",
+          "wymagania",
+          "po",
+          "lub",
+          "jesteś",
+          "twoje"
+        ],
+        "sv": [
+          "och",
+          "att",
+          "det",
+          "som",
+          "är",
+          "på",
+          "för",
+          "med",
+          "av",
+          "till",
+          "vi",
+          "du",
+          "har",
+          "inte",
+          "om",
+          "eller",
+          "din",
+          "ditt",
+          "vår",
+          "våra",
+          "erfarenhet",
+          "arbete",
+          "kommer",
+          "oss"
+        ],
+        "da": [
+          "og",
+          "er",
+          "på",
+          "med",
+          "af",
+          "til",
+          "vi",
+          "du",
+          "har",
+          "ikke",
+          "som",
+          "et",
+          "det",
+          "eller",
+          "din",
+          "dit",
+          "vores",
+          "vår",
+          "våre",
+          "erfaring",
+          "arbejde",
+          "jobb",
+          "skal",
+          "kan"
+        ],
+        "fi": [
+          "ja",
+          "että",
+          "ei",
+          "se",
+          "tai",
+          "kanssa",
+          "sinä",
+          "meidän",
+          "olet",
+          "kokemusta",
+          "työ",
+          "tiimi",
+          "sekä",
+          "ovat",
+          "myös",
+          "joka"
+        ],
+        "cs": [
+          "na",
+          "se",
+          "je",
+          "pro",
+          "že",
+          "jako",
+          "nebo",
+          "jsme",
+          "vás",
+          "práce",
+          "zkušenosti",
+          "které",
+          "který",
+          "bude",
+          "budeš",
+          "nabízíme",
+          "také",
+          "ve",
+          "od"
+        ],
+        "hu": [
+          "az",
+          "és",
+          "hogy",
+          "nem",
+          "egy",
+          "van",
+          "meg",
+          "csapat",
+          "tapasztalat",
+          "munka",
+          "vagy",
+          "mint",
+          "már",
+          "szerint",
+          "területen",
+          "feladatok",
+          "elvárások",
+          "kínálunk"
+        ],
+        "ro": [
+          "și",
+          "în",
+          "de",
+          "la",
+          "cu",
+          "pe",
+          "pentru",
+          "care",
+          "este",
+          "din",
+          "să",
+          "nu",
+          "echipa",
+          "experiență",
+          "sau",
+          "fi",
+          "vei",
+          "oferim",
+          "cerințe"
+        ]
+      },
+      "requiredLanguages": "french|german|dutch|catalan|italian|polish|swedish|danish|norwegian|finnish|czech|hungarian|greek|romanian|bulgarian|lithuanian|estonian|latvian|croatian|slovak|slovenian|serbian|hebrew|arabic|japanese|mandarin|chinese|cantonese|korean|russian|turkish|ukrainian|flemish|basque|galician|deutsch|fran[cç]ais|italiano|nederlands|polski|svenska|dansk|norsk|suomi",
+      "requirePatterns": [
+        "\\b(fluen(t|cy)|native|mother tongue|proficien(t|cy)|business[- ]level|professional[- ]level|full professional|(excellent|strong|very good|good) (command|knowledge|written|spoken|verbal|communication)|advanced|bilingual|c1|c2|working (knowledge|proficiency))\\b[^.\\n]{0,40}\\b({LANGS})\\b",
+        "\\b({LANGS})\\b[^.\\n]{0,30}\\b(is |are )?(required|mandatory|essential|a must|must|fluency|fluent|native|c1|c2|speaking|speaker|needed|necessary|level)\\b",
+        "\\b(speak|speaks|speaking|write|writes|writing)\\b[^.\\n]{0,25}\\b({LANGS})\\b",
+        "\\benglish ?(and|&|/|\\+|,) ?({LANGS})\\b",
+        "\\b({LANGS}) ?(and|&|/|\\+) ?english\\b",
+        "\\b(francophone|germanophone|nederlandstalig)\\b",
+        "\\b({LANGS})[- ]speaking\\b"
+      ],
+      "requireExceptAfter": [
+        "^[\\s-]*(market|markets|countries|country|users|customers|audiences?|regions?|clients?|world|communities|speakers? market|team|teams|office|offices|company|companies|colleagues|partners?|subsidiary|entity|headquarters|hq|government|laws?|regulations?|banks?|retailers?|brands?|operations|startups?|start-ups?|organi[sz]ations?|culture|engineering|car|cars|automotive)\\b"
+      ],
+      "optional": "\\b(plus|nice[- ]to[- ]have|bonus|advantage|advantageous|preferred|preferable|beneficial|desirable|not required|would be great|helpful|appreciated|optional|ideally)\\b",
+      "localTokens": "(muttersprach|flie(ß|ss)end\\w* deutsch|deutschkenntnisse|sehr gute deutsch|courant en fran[cç]ais|fran[cç]ais courant|nivel (alto|nativo|avanzado) de catal[áa]n)"
+    },
+    "currency": {
+      "label": "moeda fora de EUR/USD/GBP",
+      "ui": "Moeda",
+      "explain": "EUR, USD e GBP passam. Salário explícito só em outra moeda sai. Sem moeda no anúncio: fica com a etiqueta 'moeda?'.",
+      "good": [
+        "(€|£|\\b(eur|euro|euros|usd|us\\$|gbp)\\b|(^|[^a-z$])\\$)\\s?{AMT}",
+        "{AMT}\\s?(€|£|(eur|euros?|usd|gbp)\\b)"
+      ],
+      "bad": [
+        "\\b(pln|sek|dkk|nok|chf|czk|huf|ron|bgn|inr|cad|aud|brl|mxn|ars|cop|clp|jpy|cny|rmb|sgd|nzd|zar|ils|aed|sar|egp|ngn|kes|uah|krw|twd|hkd|idr|myr|thb|vnd)\\s?{AMT}",
+        "{AMT}\\s?((pln|sek|dkk|nok|chf|czk|huf|ron|bgn|inr|cad|aud|brl|mxn|jpy|cny|sgd|nzd|zar|ils|aed|kr|lei)\\b|zł|kč)",
+        "\\b(c|ca|a|au|r|nz|s|mx|hk|sg)\\$\\s?{AMT}",
+        "(₹|¥|₺|₪|₽|₩|₱|₦)\\s?{AMT}"
+      ],
+      "codes": [
+        [
+          "EUR",
+          "(€|\\beur\\b|\\beuros?\\b)"
+        ],
+        [
+          "GBP",
+          "(£|\\bgbp\\b)"
+        ],
+        [
+          "USD",
+          "(\\$|\\busd\\b)"
+        ]
+      ]
+    },
+    "contractor": {
+      "explain": "Só etiqueta e bônus no ranking, nunca exclui. 'B2B SaaS' não é contrato B2B. EOR só quando o anúncio oferece contratação via EOR/parceiro ao candidato (ex.: 'we hire through Deel'), não quando a empresa vende EOR ou só cita o termo (16/10).",
+      "types": [
+        [
+          "EOR",
+          "\\b(hire|hires|hired|hiring|employ|employs|employed|employment|engage|engaged|onboard|onboarded|contract|contracted|payroll|paid)\\b[^.\\n]{0,60}\\b(through|via|using|by|with) (an? |our |a local )?(eor|employer of record|deel|letsdeel|oyster ?hr|oysterhr|remote\\.com|papaya global|globalization partners|velocity global|remofirst|safeguard global|native teams)\\b|\\b(through|via) (an? |our )?(eor|employer of record|eor partner|employment partner)\\b|\\b(eor|employer of record)\\b[^.\\n]{0,30}\\b(option|available|possible|arrangement|basis|model|setup|set-up)\\b"
+        ],
+        [
+          "B2B",
+          "\\b(b2b (contract|agreement|basis|cooperation|engagement)|(contract|agreement|cooperation|umowa) (on )?b2b|on a b2b)\\b"
+        ],
+        [
+          "Contractor",
+          "\\b(independent contractor|contractor|contract role|contract position|contract basis|contract-based|freelance|freelancer|self-employed|hire (from|in) (any|over \\d+) countr\\w*)\\b"
+        ]
+      ],
+      "metaContract": "\\b(contract|freelance)\\b"
+    },
+    "ats_onsite": {
+      "label": "ATS diz presencial",
+      "ui": "Não é remoto",
+      "explain": "O ATS (Ashby/Lever workplaceType, guardado em job.atsWorkplace por fetch-ats-workplace.js) declara onsite. Vale mesmo que o texto fale em remoto."
+    },
+    "ats_hybrid": {
+      "label": "ATS diz híbrido",
+      "ui": "Não é remoto",
+      "explain": "O ATS (Ashby/Lever workplaceType, guardado em job.atsWorkplace) declara Hybrid. Vale mesmo que o texto fale em remoto."
+    }
+  },
+  "countries": [
+    [
+      "Spain",
+      "@spain"
+    ],
+    [
+      "Portugal",
+      "\\b(portugal|lisboa|lisbon|porto|braga|coimbra|faro|aveiro)\\b"
+    ],
+    [
+      "France",
+      "\\b(france|paris|lyon|marseille|toulouse|bordeaux|lille|nantes|nice|montpellier|strasbourg|rennes|villeneuve|[îi]le-de-france)\\b"
+    ],
+    [
+      "Germany",
+      "\\b(germany|deutschland|berlin|munich|münchen|hamburg|frankfurt|cologne|köln|düsseldorf|stuttgart|leipzig|hildesheim|bavaria|hesse)\\b"
+    ],
+    [
+      "Italy",
+      "\\b(italy|italia|milan|milano|rome|roma|turin|torino|bologna|florence|firenze|naples|legnano|lombardy)\\b"
+    ],
+    [
+      "Netherlands",
+      "\\b(netherlands|holland|amsterdam|rotterdam|utrecht|the hague|eindhoven|enschede|randstad|rosmalen|renswoude|groningen|north brabant)\\b"
+    ],
+    [
+      "Belgium",
+      "\\b(belgium|brussels|bruxelles|antwerp|ghent|gent|leuven)\\b"
+    ],
+    [
+      "Ireland",
+      "\\b(ireland|dublin|cork|galway|limerick)\\b"
+    ],
+    [
+      "United Kingdom",
+      "\\b(united kingdom|uk|england|scotland|wales|london|manchester|edinburgh|bristol|cambridge|oxford|leeds|glasgow|birmingham)\\b"
+    ],
+    [
+      "Sweden",
+      "\\b(sweden|stockholm|gothenburg|göteborg|malmo|malmö|uppsala)\\b"
+    ],
+    [
+      "Denmark",
+      "\\b(denmark|copenhagen|københavn|aarhus|hørsholm|odense)\\b"
+    ],
+    [
+      "Norway",
+      "\\b(norway|oslo|bergen|trondheim)\\b"
+    ],
+    [
+      "Finland",
+      "\\b(finland|helsinki|espoo|tampere|uusimaa)\\b"
+    ],
+    [
+      "Poland",
+      "\\b(poland|warsaw|warszawa|krak[óo]w|cracow|wroc[łl]aw|gda[ńn]sk|pozna[ńn]|[łl][óo]d[źz]|katowice)\\b"
+    ],
+    [
+      "Czechia",
+      "\\b(czechia|czech republic|prague|praha|brno)\\b"
+    ],
+    [
+      "Hungary",
+      "\\b(hungary|budapest|debrecen)\\b"
+    ],
+    [
+      "Romania",
+      "\\b(romania|bucharest|bucure[șs]ti|cluj|iasi|ia[șs]i|timi[șs]oara)\\b"
+    ],
+    [
+      "Bulgaria",
+      "\\b(bulgaria|sofia|plovdiv|varna)\\b"
+    ],
+    [
+      "Greece",
+      "\\b(greece|athens|thessaloniki|heraklion|ir[áa]klion|crete|attiki)\\b"
+    ],
+    [
+      "Austria",
+      "\\b(austria|vienna|wien|graz|linz)\\b"
+    ],
+    [
+      "Switzerland",
+      "\\b(switzerland|zurich|zürich|geneva|gen[èe]ve|basel|lausanne|bern)\\b"
+    ],
+    [
+      "Lithuania",
+      "\\b(lithuania|vilnius|kaunas)\\b"
+    ],
+    [
+      "Latvia",
+      "\\b(latvia|riga)\\b"
+    ],
+    [
+      "Estonia",
+      "\\b(estonia|tallinn|tartu)\\b"
+    ],
+    [
+      "Croatia",
+      "\\b(croatia|zagreb)\\b"
+    ],
+    [
+      "Slovakia",
+      "\\b(slovakia|bratislava)\\b"
+    ],
+    [
+      "Slovenia",
+      "\\b(slovenia|ljubljana)\\b"
+    ],
+    [
+      "Luxembourg",
+      "\\b(luxembourg)\\b"
+    ],
+    [
+      "Cyprus",
+      "\\b(cyprus|limassol|nicosia)\\b"
+    ],
+    [
+      "Malta",
+      "\\b(malta|valletta)\\b"
+    ],
+    [
+      "Serbia",
+      "\\b(serbia|belgrade|novi sad)\\b"
+    ],
+    [
+      "Ukraine",
+      "\\b(ukraine|kyiv|kiev|lviv)\\b"
+    ],
+    [
+      "Turkey",
+      "\\b(turkey|türkiye|istanbul|ankara)\\b"
+    ],
+    [
+      "Israel",
+      "\\b(israel|tel aviv|jerusalem|haifa)\\b"
+    ],
+    [
+      "United Arab Emirates",
+      "\\b(united arab emirates|uae|dubai|abu dhabi)\\b"
+    ],
+    [
+      "Canada",
+      "\\b(canada|toronto|vancouver|montreal|ottawa|calgary)\\b"
+    ],
+    [
+      "Brazil",
+      "\\b(brazil|brasil|são paulo|sao paulo|rio de janeiro|belo horizonte|curitiba|porto alegre)\\b"
+    ],
+    [
+      "Mexico",
+      "\\b(mexico|méxico|ciudad de méxico|guadalajara|monterrey)\\b"
+    ],
+    [
+      "India",
+      "\\b(india|bangalore|bengaluru|mumbai|delhi|hyderabad|pune|chennai)\\b"
+    ],
+    [
+      "United States",
+      "\\b(united states|usa|us|u\\.s\\.|new york|san francisco|los angeles|seattle|boston|austin|chicago|denver|miami|atlanta|california|texas|washington|new jersey|massachusetts|illinois|colorado|florida|virginia|north carolina|pennsylvania|ohio|michigan|minnesota|oregon|utah|arizona|tennessee|missouri|wisconsin|maryland|connecticut)\\b"
+    ],
+    [
+      "European Union",
+      "\\b(european union|eu|eea)\\b"
+    ],
+    [
+      "EMEA",
+      "\\bemea\\b"
+    ],
+    [
+      "Europe",
+      "\\beurope\\b"
+    ],
+    [
+      "Worldwide",
+      "\\b(worldwide|anywhere|global)\\b"
+    ]
+  ],
+  "learned": []
+}
