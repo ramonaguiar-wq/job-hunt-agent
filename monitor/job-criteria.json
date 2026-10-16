@@ -2,8 +2,8 @@
   "version": 2,
   "updatedAt": "2026-10-16",
   "about": [
-    "Regras duras de vaga do candidato: Product Designer IC (Pleno, Sênior ou Staff), mora em Valência, sem permiso de trabalho espanhol como empregado.",
-    "Quer 100% remoto, contratado por empresa de fora da Espanha (contractor/B2B ou EOR tipo Deel), pago em EUR/USD/GBP, trabalho em inglês (português só em vaga de Portugal).",
+    "Generic starter ruleset for remote design job hunting. Hard rules drop jobs that are closed, on-site/hybrid, require relocation or local work authorization, lack remote confirmation, need a language outside 'allowed', or pay in an unlisted currency.",
+    "Stricter, opt-in rules are defined but disabled: add their key to 'order' to turn them on (seniority, country, spain_local). See test-fixtures/reference-criteria.json for a fully enabled example.",
     "Lido por monitor/filters.js (coleta e pool) e por agent/criteria.py (painel). Os dois aplicam as mesmas regras; test-criteria.js prova isso.",
     "Padrões: sintaxe comum a JS e Python. Sem lookbehind, sem grupo nomeado, sem flags inline. O texto chega normalizado e em minúsculas; \\b, \\w e \\s são ASCII nos dois.",
     "Os padrões rodam sem flag de caixa: escreva tudo em minúsculas (test-criteria.js reprova maiúscula fora de escape).",
@@ -14,16 +14,13 @@
   ],
   "order": [
     "closed",
-    "seniority",
     "learned",
-    "country",
     "ats_onsite",
     "ats_hybrid",
     "onsite",
     "relocation",
     "authorization",
     "needs_description",
-    "spain_local",
     "no_remote",
     "language",
     "currency"
@@ -192,7 +189,7 @@
           "re": "\\b(looking for|seeking|hiring|considering|accepting|recruiting) (candidates|applicants|people|talent)( who are| that are)?( currently)?( based| located| living| residing)? (in|within) "
         }
       ],
-      "placeOk": "^[\\s,:]*(the )?(eu\\b|eea\\b|europe|european|emea\\b|spain\\b|españa|espanha|valencia|val[eè]ncia|anywhere|any (country|location|eu|european|of)|your (home|own|country|current)|a (european|eu|cet|gmt|utc|similar|compatible|country|location|time ?zone)|an (eu|eea|emea|european)|cet\\b|cest\\b|gmt|utc|wet\\b|eet\\b|(\\d+|one|two|three|four|five|six|a few|few) (\\+ )?hours? (of|from|difference)|similar time ?zones?|[a-z]+ time ?zones?|time ?zones?|(one of |any of )?(the |these )?following (countries|locations|regions|time ?zones|states)[\\s\\S]{0,200}\\b(spain|españa|europe|eu|eea|emea|anywhere|worldwide)\\b|(a |an )?(country|location|place) (of your choice|you choose))"
+      "placeOk": "^[\\s,:]*(the )?(eu\\b|eea\\b|europe|european|emea\\b|spain\\b|españa|espanha|anywhere|any (country|location|eu|european|of)|your (home|own|country|current)|a (european|eu|cet|gmt|utc|similar|compatible|country|location|time ?zone)|an (eu|eea|emea|european)|cet\\b|cest\\b|gmt|utc|wet\\b|eet\\b|(\\d+|one|two|three|four|five|six|a few|few) (\\+ )?hours? (of|from|difference)|similar time ?zones?|[a-z]+ time ?zones?|time ?zones?|(one of |any of )?(the |these )?following (countries|locations|regions|time ?zones|states)[\\s\\S]{0,200}\\b(spain|españa|europe|eu|eea|emea|anywhere|worldwide)\\b|(a |an )?(country|location|place) (of your choice|you choose))"
     },
     "authorization": {
       "label": "exige autorização de trabalho no país",
@@ -322,15 +319,11 @@
     "language": {
       "label": "idioma",
       "ui": "Idioma",
-      "explain": "Trabalho em inglês, espanhol ou português (CRITERIOS_VAGAS.md). Anúncio escrito em PT/ES não sai. Exigir fluência em outro idioma (francês, alemão, italiano, holandês, polonês, japonês, chinês etc.) sai. Inglês, espanhol e português exigidos não saem.",
+      "explain": "Work language must be in 'allowed' (default: English). Ads written in another language, or requiring fluency in a language not allowed, are dropped. Edit 'allowed' to add yours.",
       "allowed": [
-        "en",
-        "es",
-        "pt"
+        "en"
       ],
-      "allowedWhenPlace": {
-        "pt": "\\b(portugal|lisboa|lisbon|porto|braga|coimbra|faro|aveiro)\\b"
-      },
+      "allowedWhenPlace": {},
       "names": {
         "en": "inglês",
         "es": "espanhol",

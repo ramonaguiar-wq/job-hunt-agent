@@ -41,7 +41,7 @@ node job-monitor.js      # one collection run
 cd ../agent && python3 agent.py   # panel on http://localhost:8765
 ```
 
-Edit `agent/prompts/*.md` and `agent/config.json` first. The shipped `job-criteria.json` is my own ruleset, kept as a worked example, so change it to yours.
+Edit `agent/prompts/*.md` and `agent/config.json` first. `monitor/job-criteria.json` is a generic starter (remote-only, English, EUR/USD/GBP, no relocation). Stricter rules such as seniority, country and Spain-local hiring are defined but off: add their key to `order` to enable. `monitor/test-fixtures/reference-criteria.json` is a fully enabled example that the test suite uses.
 
 ## Status
 

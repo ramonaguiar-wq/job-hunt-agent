@@ -11,6 +11,7 @@ const os = require('os');
 const path = require('path');
 const util = require('util');
 const { execFileSync } = require('child_process');
+process.env.JOB_CRITERIA = process.env.JOB_CRITERIA || path.join(__dirname, 'test-fixtures', 'reference-criteria.json');
 const F = require('./filters');
 
 const VERBOSE = process.argv.includes('-v');
